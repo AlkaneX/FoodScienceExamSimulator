@@ -1,0 +1,1697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Food Science Exam Simulator</title>
+<meta name="description" content="Practice key terms, true/false, multiple choice, fill-in-the-blank, scenario and short-answer questions for the food science exam. Works on phones and computers.">
+<script>try{var t=localStorage.getItem('fses-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Design tokens. The look borrows from the Nutrition Facts panel:
+   heavy black rules, condensed bold type, highlighter yellow.
+------------------------------------------------------------------ */
+:root{
+  --bench:#E3E9E5;      /* page background: lab bench */
+  --label:#FFFFFF;      /* panels and cards */
+  --ink:#121413;        /* text and rules */
+  --muted:#58615B;
+  --hair:#C8D0CB;
+  --hl:#FFE14A;         /* highlighter */
+  --hl-ink:#121413;
+  --ok:#17784A; --ok-bg:#E1F2E8;
+  --no:#BF3328; --no-bg:#FBE6E3;
+  --part:#9A6400;
+  --focus:#2C5BE8;
+  --shadow:0 1px 0 rgba(0,0,0,.04), 0 10px 28px -16px rgba(18,20,19,.35);
+  --f-display:"Archivo","Helvetica Neue","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bench:#0E1110; --label:#181C1A; --ink:#ECF1ED; --muted:#A0AAA4; --hair:#2E3632;
+    --hl:#F3D23C; --hl-ink:#121413; --ok:#55CB91; --ok-bg:#10281C; --no:#F27D71; --no-bg:#2E1613;
+    --part:#E8B44C; --focus:#86A6FF; --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bench:#0E1110; --label:#181C1A; --ink:#ECF1ED; --muted:#A0AAA4; --hair:#2E3632;
+  --hl:#F3D23C; --hl-ink:#121413; --ok:#55CB91; --ok-bg:#10281C; --no:#F27D71; --no-bg:#2E1613;
+  --part:#E8B44C; --focus:#86A6FF; --shadow:none; color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bench);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+p{margin:0 0 .7em}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:30;background:var(--ink);color:var(--label);padding:calc(8px + env(safe-area-inset-top)) 16px 8px}
+.topbar-in{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:12px;position:relative}
+.brand{background:none;border:0;padding:2px 0;color:inherit;text-align:left;font-family:var(--f-display);font-weight:900;font-stretch:72%;font-size:1.3rem;line-height:1;text-transform:uppercase;letter-spacing:.01em}
+.brand small{display:block;font-weight:700;font-stretch:100%;font-size:.62rem;letter-spacing:.16em;opacity:.72;margin-top:3px}
+.top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.timer{display:flex;align-items:stretch;border:2px solid currentColor;border-radius:999px;overflow:hidden;transition:background-color .2s,color .2s}
+.timer button{background:none;border:0;color:inherit;display:flex;align-items:center;gap:6px;min-height:36px;padding:4px 10px}
+.t-face{font-family:var(--f-display);font-weight:800;font-variant-numeric:tabular-nums;font-size:.95rem;letter-spacing:.02em}
+.t-play{border-left:2px solid currentColor !important;padding:4px 9px !important}
+.timer.running{background:var(--hl);color:var(--hl-ink);border-color:var(--hl)}
+.timer.running .t-play{border-left-color:var(--hl-ink) !important}
+.timer.expired{background:var(--no);color:#fff;border-color:var(--no)}
+.icon-btn{width:38px;height:38px;border-radius:999px;border:2px solid currentColor;background:none;color:inherit;display:grid;place-items:center;padding:0}
+svg{display:block;pointer-events:none}
+
+.t-panel{position:absolute;right:0;top:calc(100% + 10px);width:min(330px,calc(100vw - 32px));background:var(--label);color:var(--ink);border:2px solid var(--ink);border-top-width:8px;padding:12px 14px 14px;box-shadow:var(--shadow);z-index:40}
+.t-panel h2{font-family:var(--f-display);font-weight:900;font-stretch:75%;font-size:1.5rem;text-transform:uppercase;margin:0 0 8px;line-height:1}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--ink);border-radius:4px;overflow:hidden;margin-bottom:10px}
+.seg button{border:0;background:var(--label);padding:8px;font-family:var(--f-display);font-weight:800;font-size:.92rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--label)}
+.t-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.t-row label{font-family:var(--f-display);font-weight:700}
+.t-row input{width:90px;min-height:40px;border:2px solid var(--ink);border-radius:4px;padding:4px 8px;background:var(--label);font-size:1rem}
+.t-big{font-family:var(--f-display);font-weight:900;font-stretch:80%;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums;margin:2px 0 10px}
+.t-note{font-size:.85rem;color:var(--muted);margin:10px 0 0}
+
+/* ---------- layout ---------- */
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+.wrap.wide{max-width:960px}
+.intro{font-size:1rem;color:var(--muted);margin:0 0 16px;max-width:60ch}
+
+/* ---------- Nutrition-Facts-style panel ---------- */
+.nf{background:var(--label);border:2px solid var(--ink);padding:8px 14px 14px;box-shadow:var(--shadow)}
+.nf-title{font-family:var(--f-display);font-weight:900;font-stretch:70%;font-size:clamp(2.5rem,10vw,3.4rem);line-height:.88;letter-spacing:-.01em;margin:2px 0 4px}
+.nf-sub{margin:0 0 4px;font-size:1rem}
+.nf-bar{border:0;border-top:12px solid var(--ink);margin:6px 0 4px}
+.nf-bar.mid{border-top-width:6px}
+.nf-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-top:1px solid var(--ink);padding:5px 0;font-family:var(--f-display);font-size:1rem}
+.nf-row:first-child{border-top:0}
+.nf-row .v{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.nf-row.indent{padding-left:16px}
+.nf-row b{font-weight:800}
+.nf-serv{display:flex;justify-content:space-between;gap:12px;font-family:var(--f-display);font-weight:800;font-size:1.15rem;align-items:baseline}
+.nf-big{display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--f-display);font-weight:900;font-stretch:75%;line-height:1}
+.nf-big .k{font-size:1.9rem}
+.nf-big .k small{display:block;font-size:.8rem;font-stretch:100%;font-weight:800;letter-spacing:.02em;margin-bottom:2px}
+.nf-big .v{font-size:3rem;font-variant-numeric:tabular-nums}
+.nf-foot{font-size:.82rem;line-height:1.4;margin:10px 0 0}
+.nf-head{display:flex;justify-content:space-between;font-family:var(--f-display);font-weight:800;font-size:.8rem;padding:2px 0}
+
+.home-grid{display:grid;gap:20px;align-items:start}
+@media (min-width:820px){.home-grid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}}
+.nf.pending{color:var(--muted);border-color:var(--muted);box-shadow:none;background:transparent}
+.nf.pending .nf-bar{border-top-color:var(--muted)}
+.nf.pending .nf-row{border-top-color:var(--muted)}
+.pending-note{font-family:var(--f-display);font-weight:900;font-stretch:75%;font-size:1.9rem;color:var(--ink);margin:16px 0 14px;line-height:1}
+
+.mode-btn{display:block;width:100%;text-align:left;background:var(--ink);color:var(--label);border:2px solid var(--ink);border-radius:4px;padding:12px 14px;margin-top:10px;transition:background-color .15s,color .15s}
+.mode-btn .k{display:block;font-family:var(--f-display);font-weight:800;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.mode-btn .t{display:block;font-family:var(--f-display);font-weight:900;font-stretch:80%;font-size:1.55rem;line-height:1.1}
+.mode-btn .d{display:block;font-size:.92rem;opacity:.85}
+.mode-btn:hover,.mode-btn:focus-visible{background:var(--hl);color:var(--hl-ink)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:10px 18px;border:2px solid var(--ink);border-radius:4px;background:var(--label);color:var(--ink);font-family:var(--f-display);font-weight:800;font-size:1.02rem;letter-spacing:.01em;transition:background-color .15s,color .15s}
+.btn.primary{background:var(--ink);color:var(--label)}
+.btn:hover:not(:disabled){background:var(--hl);color:var(--hl-ink)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn-row .btn{flex:1 1 180px}
+.linkbtn{background:none;border:0;padding:6px 0;font-family:var(--f-display);font-weight:700;font-size:.98rem;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+.linkbtn:hover{background:var(--hl);color:var(--hl-ink)}
+
+/* ---------- question types menu ---------- */
+.crumbs{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+.mode-chip{display:inline-block;background:var(--hl);color:var(--hl-ink);font-family:var(--f-display);font-weight:800;padding:1px 7px;border-radius:3px}
+.filters{display:grid;gap:10px 16px;padding:8px 0 4px}
+.filters>*{min-width:0}
+@media (min-width:600px){.filters{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:4px;font-family:var(--f-display);font-weight:800;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase}
+.field select{width:100%;max-width:100%;min-height:46px;border:2px solid var(--ink);border-radius:4px;background:var(--label);padding:6px 10px;font-family:var(--f-body);font-size:1rem;text-transform:none;letter-spacing:0;font-weight:400}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:.95rem;line-height:1.35;cursor:pointer}
+.chk input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--ink);flex:none}
+.type-row{display:grid;grid-template-columns:1fr auto 18px;align-items:center;gap:12px;width:calc(100% + 16px);margin:0 -8px;background:none;border:0;border-top:1px solid var(--ink);padding:11px 8px;text-align:left;color:inherit;transition:background-color .12s}
+.type-row:first-of-type{border-top:0}
+.type-row:hover:not(:disabled){background:var(--hl);color:var(--hl-ink)}
+.type-row:hover:not(:disabled) small{color:inherit}
+.type-row:disabled{opacity:.4;cursor:not-allowed}
+.tr-name b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.14rem;line-height:1.2}
+.tr-name small{display:block;font-size:.86rem;color:var(--muted);margin-top:2px}
+.tr-n{font-family:var(--f-display);font-weight:800;font-size:1.14rem;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tr-n small{display:block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.type-row:hover:not(:disabled) .tr-n small{color:inherit}
+.type-row.exam b{font-weight:900;font-stretch:80%;font-size:1.5rem}
+
+/* ---------- quiz ---------- */
+.quiz-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.prog{height:8px;background:var(--hair);margin:8px 0 8px;border-radius:2px;overflow:hidden}
+.prog span{display:block;height:100%;background:var(--ink);transition:width .25s}
+.qmeta{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-display);font-weight:800;font-size:.9rem;margin-bottom:10px;flex-wrap:wrap}
+.qmeta .sc{background:var(--ink);color:var(--label);padding:0 8px;border-radius:3px}
+.card{background:var(--label);border:2px solid var(--ink);border-top-width:10px;padding:16px 16px 18px;box-shadow:var(--shadow);outline:none}
+@media (min-width:640px){.card{padding:22px 26px 26px}}
+.eyebrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-family:var(--f-display);font-weight:700;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.tag{border:1.5px solid currentColor;border-radius:3px;padding:0 6px;letter-spacing:.06em}
+.tag.g{background:var(--hl);color:var(--hl-ink);border-color:var(--hl)}
+.q-prompt{font-family:var(--f-display);font-weight:800;font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px}
+.q-text{font-size:1.2rem;line-height:1.45;margin:0 0 16px}
+@media (min-width:640px){.q-text{font-size:1.32rem}}
+.kt-term{display:block;font-family:var(--f-display);font-weight:900;font-stretch:85%;font-size:1.45em;line-height:1.1;margin-bottom:6px}
+.defq{margin:4px 0 16px;padding:12px 14px;border-left:8px solid var(--hl);background:color-mix(in srgb,var(--hl) 14%,var(--label));font-size:1.15rem;line-height:1.45}
+
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--label);color:var(--ink);border:2px solid var(--ink);border-radius:4px;padding:12px 14px;min-height:52px;line-height:1.38;font-size:1.02rem;transition:background-color .12s,opacity .12s}
+.opt:hover:not([aria-disabled="true"]){background:color-mix(in srgb,var(--hl) 40%,var(--label))}
+.opt[aria-disabled="true"]{cursor:default}
+.ltr{font-family:var(--f-display);font-weight:800;font-size:.85rem;min-width:26px;height:26px;display:inline-grid;place-items:center;border:2px solid currentColor;border-radius:3px;flex:none}
+.opt.sel{background:var(--hl);color:var(--hl-ink)}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg)}
+.opt.ok .ltr{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.no{border-color:var(--no);background:var(--no-bg)}
+.opt.no .ltr{background:var(--no);border-color:var(--no);color:#fff}
+.opt.dim{opacity:.5}
+.tf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt.tf{justify-content:center;align-items:center;font-family:var(--f-display);font-weight:900;font-stretch:85%;font-size:1.4rem;text-transform:uppercase;letter-spacing:.03em;min-height:66px}
+
+.fb{scroll-margin-top:84px;scroll-margin-bottom:120px;margin-top:16px;border-top:3px solid var(--ink);padding-top:12px;animation:rise .22s ease-out}
+.fb-h{font-family:var(--f-display);font-weight:900;font-stretch:80%;font-size:1.45rem;text-transform:uppercase;letter-spacing:.02em;margin:0 0 6px;line-height:1.1}
+.fb-h.ok{color:var(--ok)} .fb-h.no{color:var(--no)} .fb-h.part{color:var(--part)}
+.fb-h.sm{font-size:1.1rem;margin-top:14px}
+.fb-a{font-weight:700}
+mark{background:linear-gradient(transparent 40%,var(--hl) 40%,var(--hl) 92%,transparent 92%);color:inherit;padding:0 .12em}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) mark{background:var(--hl);color:var(--hl-ink);border-radius:2px}}
+:root[data-theme="dark"] mark{background:var(--hl);color:var(--hl-ink);border-radius:2px}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.blank{display:inline-block;min-width:3.4em;border-bottom:2.5px solid var(--ink);text-align:center;font-family:var(--f-display);font-weight:800;font-size:.72em;line-height:1.1;color:var(--muted);vertical-align:baseline;margin:0 2px}
+.fill-hint{font-size:.9rem;color:var(--muted);margin:-8px 0 12px}
+.fi{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.fi-n{font-family:var(--f-display);font-weight:800;min-width:26px;height:26px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:3px;font-size:.85rem;flex:none}
+.fi input{flex:1;min-width:0;min-height:50px;border:2px solid var(--ink);border-radius:4px;padding:8px 12px;background:var(--label);font-size:1.06rem}
+.fi input.ok{border-color:var(--ok);background:var(--ok-bg)}
+.fi input.no{border-color:var(--no);background:var(--no-bg)}
+
+.m-terms{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+@media (min-width:560px){.m-terms{grid-template-columns:1fr 1fr}}
+.m-term{display:flex;gap:10px;align-items:center;border:2px solid var(--ink);border-radius:4px;padding:8px 10px;font-weight:700;line-height:1.25;transition:opacity .12s}
+.m-term.used{opacity:.45}
+.m-defs{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.m-def{border-top:2px solid var(--ink);padding-top:10px}
+.m-def p{margin:0 0 8px}
+.m-num{font-family:var(--f-display);font-weight:900;margin-right:8px}
+.m-picks{display:flex;gap:8px;flex-wrap:wrap}
+.pick{width:50px;height:44px;border:2px solid var(--ink);border-radius:4px;background:var(--label);color:var(--ink);font-family:var(--f-display);font-weight:800;font-size:1rem}
+.pick:hover:not([aria-disabled="true"]){background:color-mix(in srgb,var(--hl) 40%,var(--label))}
+.pick[aria-disabled="true"]{cursor:default}
+.pick.sel{background:var(--hl);color:var(--hl-ink)}
+.pick.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.pick.no{background:var(--no);border-color:var(--no);color:#fff}
+.m-res{margin:8px 0 0;font-weight:700}
+.m-res.ok{color:var(--ok)} .m-res.no{color:var(--no)}
+
+textarea{width:100%;min-height:150px;border:2px solid var(--ink);border-radius:4px;padding:10px 12px;background:var(--label);font-size:1.02rem;line-height:1.5;resize:vertical}
+.checks,.bullets{margin:4px 0 8px;padding:0;list-style:none;display:grid;gap:8px}
+.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;line-height:1.4}
+.checks input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ok);flex:none}
+.bullets li{position:relative;padding-left:22px;line-height:1.4}
+.bullets li::before{content:"";position:absolute;left:4px;top:.5em;width:9px;height:9px;background:var(--ink)}
+.sa-score{font-family:var(--f-display);font-weight:800;font-size:1.1rem;margin-top:10px}
+.model p{line-height:1.55}
+
+.qnav{position:sticky;bottom:0;z-index:10;margin-top:14px;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bench) 75%,transparent)}
+.qnav-in{display:flex;gap:10px}
+.qnav .primary{flex:1}
+.kbd-hint{font-size:.8rem;color:var(--muted);text-align:center;margin:4px 0 0}
+@media (hover:none){.kbd-hint{display:none}}
+
+/* ---------- results ---------- */
+.miss-list{display:grid;gap:12px;margin-top:12px}
+.miss{background:var(--label);border:2px solid var(--ink);border-left-width:8px;padding:12px 14px}
+.miss .q{font-weight:700;margin-bottom:6px}
+.miss .row{font-size:.95rem;margin:2px 0}
+.miss .lab{font-family:var(--f-display);font-weight:800;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
+.miss ul{margin:4px 0 0;padding-left:20px}
+.h-sec{font-family:var(--f-display);font-weight:900;font-stretch:78%;font-size:1.8rem;text-transform:uppercase;margin:28px 0 4px;line-height:1}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--label);padding:12px 18px;border-radius:4px;font-family:var(--f-display);font-weight:800;z-index:60;box-shadow:var(--shadow);max-width:calc(100vw - 32px);text-align:center}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="brand" data-act="home" aria-label="Food Science Exam Simulator: back to exams">Food Science<small>Exam simulator</small></button>
+    <div class="top-actions">
+      <div class="timer" id="timer">
+        <button class="t-face" id="tFace" aria-expanded="false" aria-controls="tPanel" aria-label="Timer settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.8M9.5 2.5h5M18.4 6.6l1.5-1.5"/></svg>
+          <span id="tTime">Timer</span>
+        </button>
+        <button class="t-play" id="tPlay" aria-label="Start timer"></button>
+      </div>
+      <button class="icon-btn" id="themeBtn" aria-label="Switch to dark theme"></button>
+    </div>
+    <div class="t-panel" id="tPanel" hidden>
+      <h2>Timer</h2>
+      <div class="seg" role="group" aria-label="Timer type">
+        <button data-tm="up" aria-pressed="true">Stopwatch</button>
+        <button data-tm="down" aria-pressed="false">Countdown</button>
+      </div>
+      <div class="t-row" id="tMinRow" hidden>
+        <label for="tMin">Minutes</label>
+        <input id="tMin" type="number" inputmode="numeric" min="1" max="300" value="50">
+      </div>
+      <div class="t-big" id="tBig">00:00</div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn primary" id="tStart">Start</button>
+        <button class="btn" id="tReset">Reset</button>
+      </div>
+      <p class="t-note">Optional. Keeps running while you switch question types. Start or pause any time.</p>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="wrap"></main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p style="padding:16px">This study tool needs JavaScript. Please enable it and reload the page.</p></noscript>
+
+<script>
+'use strict';
+/* =====================================================================
+   EXAM CONTENT
+   ---------------------------------------------------------------------
+   Everything the quizzes use lives here. To add Exam 2 later, fill in
+   EXAM2 with the same shape as EXAM1 and delete `pending: true`.
+
+   Field guide
+     terms : [term, definition, chapter, [extra accepted spellings]]
+     tf    : { q, a: true|false, e: explanation, ch }
+     mc    : { q, o: [correct option first, ...wrong options], e, ch }
+             (options are shuffled; add keep:1 and a:<index> to fix order)
+     scen  : same shape as mc (scenario / apply-the-term questions)
+     fill  : { q with ____ for each blank, b: [[accepted answers], ...],
+               ans: shown answer, e, ch, any:1 if blanks can be in any order }
+     short : { q, ans: [paragraphs], pts: [key points], ch }
+     Flags : g:1 = straight from the review guide, f:1 = key fact/figure
+   ===================================================================== */
+
+const CHAPTERS = {
+  0: 'General',
+  1: 'Food systems and sustainability',
+  2: 'Evidence, research design and labels',
+  3: 'Sensory and objective evaluation',
+  4: 'Food composition',
+  6: 'Vegetarian dietary patterns',
+  7: 'Meat',
+  8: 'Fish and shellfish'
+};
+
+const EXAM1_TERMS = [
+  // Ch 1
+  ['Anthropogenic effect', 'An effect created or caused by human activities, e.g., overfishing, biodiversity loss, pollution', 1, ['anthropogenic']],
+  ['Biodiversity', 'The variety of life forms (plants, animals, fungi, microorganisms) that make up a community', 1, ['biological diversity']],
+  ['Conventional agriculture', 'Industrialized system: mechanization, monocultures, chemical fertilizers and pesticides, emphasis on productivity and profit', 1, ['conventional', 'conventional farming', 'industrial agriculture']],
+  ['Ecological footprint', 'Estimate of the land and ocean area required to support a person’s consumption and assimilate their waste', 1, ['footprint']],
+  ['Ecological literacy', 'Understanding of the interconnected systems and relationships that sustain the web of life', 1, ['ecoliteracy', 'eco literacy']],
+  ['Ecosystem', 'Dynamic complex of plant, animal and microorganism communities and the nonliving environment, interacting as a unit', 1, []],
+  ['Food insecurity', 'When a household has difficulty providing enough food for all members due to lack of resources', 1, ['food insecure']],
+  ['Food science', 'Study of food’s physical, biochemical and chemical nature, including processing and improving food for public benefit', 1, []],
+  ['Genetically modified organisms (GMOs)', 'Plants or animals with DNA altered by inserting transgenes not naturally found in the organism', 1, ['gmo', 'gmos', 'genetically modified organism', 'genetically modified organisms', 'genetically modified']],
+  ['Greenhouse effect', 'Naturally occurring trapping of heat in the atmosphere, substantially increased by human emissions, especially CO2', 1, []],
+  ['Herbicide', 'Pesticide that kills unwanted plants (weeds) while leaving others alone', 1, []],
+  ['Sustainable agriculture', 'System founded on ecological principles; economically viable, socially conscious, able to maintain productivity', 1, ['sustainable farming']],
+  ['Hunger Vital Sign', '2-item food insecurity screening tool; best practice is universal screening plus a closed-loop referral', 1, ['hvs']],
+  // Ch 2
+  ['Evidence-based practice (Sackett)', 'Best external evidence + professional expertise + client values and context', 2, ['evidence based practice', 'ebp']],
+  ['Peer-reviewed article', 'Reviewed by academic experts for significance, methods and interpretation; found in journals and databases such as PubMed. A quality filter, not a guarantee', 2, ['peer reviewed', 'peer review', 'scholarly article']],
+  ['Popular press article', 'Written by journalists for the public; found in magazines, newspapers, books', 2, ['popular press']],
+  ['Relative risk', 'Ratio of risk in exposed vs. unexposed groups (4 per 10,000 / 2 per 10,000 = 2.0)', 2, ['rr']],
+  ['Absolute risk difference', 'The actual difference in risk (2 extra cases per 10,000)', 2, ['absolute risk', 'risk difference', 'ard']],
+  ['RDN', 'Protected, verifiable credential; “nutritionist” is unregulated in many states', 2, ['rd', 'registered dietitian nutritionist', 'registered dietitian']],
+  ['Cross-sectional survey', 'Exposure and disease measured at one point in time; cannot show which came first', 2, ['cross sectional', 'cross sectional study']],
+  ['Cohort study', 'Participants classified by exposure and followed over time for disease', 2, ['cohort']],
+  ['Prospective cohort', 'Disease has not yet occurred when the study begins', 2, ['prospective', 'prospective cohort study']],
+  ['Retrospective cohort', 'Disease has already occurred when the study begins', 2, ['retrospective', 'retrospective cohort study']],
+  ['Case-control study', 'Starts with people who have the outcome and a matched group without it, then looks backward at exposures', 2, ['case control']],
+  ['Randomized design', 'Subjects are assigned to groups randomly', 2, ['randomized', 'randomization', 'randomised']],
+  ['Double-blind placebo-controlled design', 'Neither participants nor investigators know group assignment; strongest cause-and-effect evidence', 2, ['double blind', 'double blind placebo controlled']],
+  ['Health claim', 'Links a nutrient/substance to a disease or health condition; reviewed and authorized by FDA', 2, []],
+  ['Nutrient content claim', 'Describes nutrient level: “good source of fiber,” “high in calcium”', 2, ['nutrient content']],
+  ['Structure/function claim', 'Describes a nutrient’s role in body structure or function (“calcium supports strong bones”); no FDA approval, disclaimer required', 2, ['structure function', 'structure and function']],
+  // Ch 3
+  ['Sensory evaluation', 'Scientific measurement of food quality based on characteristics perceived by the five senses', 3, ['sensory']],
+  ['Affective tests', 'Determine acceptability or preference: “Which do you like better?” (paired preference, ranking, hedonic scale)', 3, ['affective']],
+  ['Analytical tests', 'Detect discernible differences (triangle, duo-trio, paired difference, descriptive analysis)', 3, ['analytical', 'analytic']],
+  ['Triangle test', 'Three samples, two identical; pick the odd one. Guessing probability 1/3', 3, ['triangle']],
+  ['Duo-trio test', 'Reference plus two coded samples; pick the match. Guessing probability 1/2, so more judgments needed', 3, ['duo trio', 'duotrio']],
+  ['Descriptive panel', 'Highly trained, experienced panelists who quantify specific sensory differences; never used with consumers', 3, ['descriptive', 'trained panel']],
+  ['Consumer panel', 'Selected from the public by demographics; never asked to detect technical attributes', 3, ['consumer']],
+  ['Hedonic scale', 'Judges rate how much they like or dislike a food (e.g., 9-point scale)', 3, ['hedonic', '9 point hedonic scale']],
+  ['Carrier', 'Food that accompanies and is eaten with the tested food (chips with salsa)', 3, []],
+  ['Adaptation', 'Gradual decrease in the ability to distinguish odors over time', 3, ['olfactory adaptation', 'sensory adaptation']],
+  ['Olfactory', 'Relating to the sense of smell', 3, ['olfaction']],
+  ['Retronasal olfaction', 'Aroma reaching the nose from the back of the mouth; most of what we call flavor', 3, ['retronasal']],
+  ['Flavor', 'Combined senses of taste, aroma and mouthfeel', 3, ['flavour']],
+  ['Mouthfeel', 'How food feels in the mouth: astringency, spice heat, cooling, metallic', 3, ['mouth feel']],
+  ['Taste buds', 'Gustatory and supporting cells, mostly on the upper surface of the tongue', 3, ['taste bud']],
+  ['Umami', 'Taste from glutamate: meats, mushrooms, soy sauce, fish sauce, cheese', 3, ['savory', 'savoury']],
+  ['Tongue map', 'A myth from a 1901 mistranslation; all five tastes are detected across the whole tongue', 3, ['tongue map myth']],
+  ['Objective evaluation', 'Food quality measured with quantifiable results from laboratory instruments', 3, ['objective']],
+  ['Physical tests', 'Volume, moisture, color, viscosity, texture, sugar concentration (refractometer)', 3, ['physical']],
+  ['Chemical tests', 'pH, sugars, saltiness, flavor, nutrient analysis (pH meter, Benedict/Fehling, atomic absorption spectroscopy)', 3, ['chemical']],
+  ['Molecular gastronomy', 'Modern cooking that identifies physical and chemical changes during cooking to create the best flavor and texture', 3, []],
+  ['Nutrigenomics', 'Study of how food affects our genes and how our bodies respond to nutrients', 3, ['nutritional genomics']],
+  // Ch 4
+  ['Carbohydrates', 'One of four major nutrient classes; 4 kcal/g. Classified as monosaccharides, disaccharides, oligosaccharides, polysaccharides', 4, ['carbohydrate', 'carbs', 'carb']],
+  ['Monosaccharides', 'Basic carbohydrate units: glucose, fructose, galactose. Glucose circulates in the blood', 4, ['simple sugars']],
+  ['Cellulose', 'Glucose polymer with beta bonds; main part of plant cell walls; indigestible, no calories', 4, []],
+  ['Dietary fiber', 'Carbohydrates and lignin intrinsic and intact in plants, indigestible by human enzymes', 4, ['dietary fibre']],
+  ['Functional fiber', 'Isolated, extracted or manufactured indigestible carbohydrates with proven physiological benefit', 4, ['functional fibre']],
+  ['Resistant starch', 'Starch humans cannot digest enzymatically; four categories', 4, []],
+  ['Glycogen', 'Carbohydrate stored in animal muscle; converted to lactic acid after slaughter', 4, []],
+  ['Hydrolysis', 'Using a water molecule to split a compound into simpler molecules', 4, []],
+  ['Gelatinization', 'Irreversible swelling and loss of order in starch granules heated in water (about 60–85 °C)', 4, ['gelatinisation', 'starch gelatinization']],
+  ['Retrogradation', 'Starch chains re-align on cooling and standing: bread staling, gels weeping (syneresis)', 4, []],
+  ['Dextrinization', 'Dry heat splits starch into shorter chains: sweeter, browner, thickens less (brown roux)', 4, ['dextrinisation']],
+  ['Maillard reaction', 'Non-enzymatic reaction of reducing sugars with amino groups: bread crust, roasted meat', 4, ['maillard', 'maillard browning']],
+  ['Caramelization', 'Browning of sugar alone under high dry heat', 4, ['caramelisation']],
+  ['Enzymatic browning', 'Polyphenol oxidase (PPO) oxidizes phenols to brown melanin (cut apples, avocados); blanching inactivates PPO', 4, ['enzymic browning', 'ppo browning']],
+  ['Amino acids', 'Contain C, H, O and N; alpha carbon bonded to an amino group, carboxyl group, hydrogen and R side group', 4, []],
+  ['Enzymes', 'Biocatalysts that speed reactions without being destroyed; all enzymes are proteins', 4, []],
+  ['Protein denaturation', 'Disruption of secondary and tertiary structure by heat, alcohol, acids, salts, enzymes, mechanical shear', 4, ['denaturation']],
+  ['Protein coagulation', 'Congealing and separating out of denatured proteins', 4, ['coagulation']],
+  ['Food foam', 'Air dispersed in a liquid or solid (whipped cream, angel food cake)', 4, ['foam']],
+  ['Hydrogenation', 'Adds hydrogen to unsaturated fatty acids; partial hydrogenation creates trans fats', 4, ['partial hydrogenation']],
+  ['Omega-3 / omega-6', 'PUFAs with first double bond at carbon 3 or 6 from the methyl end; ALA and linoleic acid are essential', 4, ['omega 3', 'omega 6', 'omega fatty acids']],
+  ['Phospholipids', 'Lipids with a phosphate head that attracts water and fatty acid tails that attract fat; act as emulsifiers (lecithin in egg yolk)', 4, []],
+  ['Water activity (aw)', 'How available water is to microbes, not total moisture; lowering it extends shelf life', 4, ['water activity', 'aw']],
+  ['Enrichment', 'Adding back nutrients lost in processing (1972 flour act: thiamin, riboflavin, niacin, iron)', 4, []],
+  ['Fortification', 'Adding nutrients to prevent specific deficiencies in a population', 4, []],
+  ['Functional food', 'Food or component with health benefits beyond basic nutrition', 4, []],
+  ['Phytochemical', 'Non-nutritive plant chemical that may help prevent disease', 4, ['phytonutrient']],
+  ['Lectins', 'Antinutrients in raw kidney beans; soak, then boil hard at least 10 minutes', 4, []],
+  // Ch 6
+  ['Vegan', 'Exclusively plant foods; lifestyle excludes all animal-derived products', 6, []],
+  ['Vegetarian', 'Plant foods with some (eggs and/or dairy) or no animal products', 6, []],
+  ['Lacto-vegetarian', 'Plant foods plus dairy', 6, ['lacto vegetarian']],
+  ['Ovo-vegetarian', 'Plant foods plus eggs', 6, ['ovo vegetarian']],
+  ['Lacto-ovo vegetarian', 'Plant foods plus dairy and eggs', 6, ['lacto ovo', 'ovo lacto', 'ovo lacto vegetarian']],
+  ['Pescatarian', 'No meat except fish; may include eggs or dairy', 6, ['pescetarian', 'pesco vegetarian']],
+  ['Flexitarian', 'Primarily vegetarian, occasional meat; not strictly vegetarian', 6, ['semi vegetarian', 'semivegetarian']],
+  ['Fruitarian', 'Fruits, nuts, seeds, sometimes legumes', 6, []],
+  ['Macrobiotic', 'Japanese-origin, grain-based with local vegetables; avoids refined foods and most animal products', 6, []],
+  ['Raw food', 'Mostly uncooked, unprocessed foods; may or may not be fully vegetarian', 6, ['raw', 'raw foodism']],
+  ['Plant-based', 'Mostly plant foods but may include some animal products', 6, ['plant based']],
+  ['Unhealthful plant-based diet index (uPDI)', 'Scores refined grains, juice, sweets, sweetened drinks, fries; higher score = higher chronic disease risk', 6, ['updi', 'unhealthful plant based diet index', 'unhealthy plant based diet index']],
+  // Ch 7
+  ['Collagen', 'Connective tissue that breaks down to gelatin under moist heat', 7, []],
+  ['Elastin', 'Connective tissue that resists cooking; must be trimmed', 7, ['silverskin']],
+  ['Marbling', 'Fat interspersed throughout muscle tissue; raises quality grade', 7, ['intramuscular fat']],
+  ['Myoglobin', 'Primary meat pigment; purplish-red', 7, []],
+  ['Oxymyoglobin', 'Bright red; forms when myoglobin contacts oxygen', 7, []],
+  ['Metmyoglobin', 'Brownish-red; excessive oxygen converts iron to the ferric state', 7, []],
+  ['Nitric oxide myoglobin', 'Pink pigment of cured meats', 7, ['nitrosylmyoglobin', 'nitrosomyoglobin']],
+  ['Grading', 'Voluntary, producer-paid quality rating by USDA AMS (tenderness, juiciness, flavor)', 7, ['usda grading', 'quality grading']],
+  ['Inspection', 'Mandatory, taxpayer-funded safety check by USDA FSIS for beef, veal, pork and lamb', 7, ['usda inspection', 'safety inspection']],
+  ['Moist heat cooking', 'Adds liquid: braising, stewing, simmering, steaming', 7, ['moist heat']],
+  ['Dry heat cooking', 'Broiling, grilling, roasting, frying', 7, ['dry heat']],
+  // Ch 8
+  ['Comminution', 'Finely dicing meat during industrial processing', 8, []],
+  ['Comminuted products', 'Animal parts used as fillers in processed products (fish sticks, surimi)', 8, ['comminuted']],
+  ['Retort pouch', 'Flexible container that is aseptic (void of microorganisms)', 8, ['retort']],
+  ['Aquaculture', 'Farming of fish and other aquatic species; now over half of aquatic animal production', 8, ['fish farming']],
+  ['Lean vs. fatty fish', 'Lean: under 5 g fat per 3 oz (cod, haddock, tilapia). Fatty: 5–10 g (salmon, mackerel, tuna)', 8, ['lean fish', 'fatty fish', 'lean and fatty fish']],
+  ['Seafood HACCP (FDA)', 'Mandatory for all domestic seafood processors and importers', 8, ['seafood haccp', 'haccp']],
+  ['NOAA grading', 'Voluntary, fee-for-service seafood quality grading', 8, ['noaa']]
+];
+
+/* Pairs too close to use as each other's "false" definition in auto-generated true/false. */
+const EXAM1_AVOID = [
+  ['Vegetarian', 'Vegan'], ['Vegetarian', 'Lacto-vegetarian'], ['Vegetarian', 'Ovo-vegetarian'], ['Vegetarian', 'Lacto-ovo vegetarian'],
+  ['Vegetarian', 'Plant-based'], ['Vegetarian', 'Flexitarian'], ['Vegan', 'Plant-based'], ['Vegan', 'Fruitarian'], ['Plant-based', 'Flexitarian'],
+  ['Cohort study', 'Prospective cohort'], ['Cohort study', 'Retrospective cohort'], ['Randomized design', 'Double-blind placebo-controlled design'],
+  ['Sensory evaluation', 'Affective tests'], ['Sensory evaluation', 'Analytical tests'], ['Analytical tests', 'Triangle test'],
+  ['Analytical tests', 'Duo-trio test'], ['Analytical tests', 'Descriptive panel'], ['Affective tests', 'Hedonic scale'],
+  ['Affective tests', 'Consumer panel'], ['Consumer panel', 'Hedonic scale'], ['Objective evaluation', 'Physical tests'],
+  ['Objective evaluation', 'Chemical tests'], ['Olfactory', 'Retronasal olfaction'], ['Flavor', 'Retronasal olfaction'],
+  ['Carbohydrates', 'Monosaccharides'], ['Carbohydrates', 'Glycogen'], ['Carbohydrates', 'Cellulose'], ['Cellulose', 'Dietary fiber'],
+  ['Dietary fiber', 'Resistant starch'], ['Functional food', 'Phytochemical'], ['Functional food', 'Functional fiber'],
+  ['Grading', 'NOAA grading'], ['Inspection', 'Seafood HACCP (FDA)'], ['Comminution', 'Comminuted products']
+];
+
+const EXAM1_TF = [
+  // From the review guide
+  { q: 'Affective tests are based on discernible differences.', a: false, e: 'Affective tests measure acceptability or preference; analytical tests detect discernible differences.', ch: 3, g: 1 },
+  { q: 'Households generate the largest share of global food waste.', a: true, e: 'About 60% (UNEP 2024); food service ~28%, retail ~12%.', ch: 1, g: 1, f: 1 },
+  { q: 'Peer review guarantees a study’s conclusions are correct.', a: false, e: 'It is a quality filter; findings are regularly overturned.', ch: 2, g: 1 },
+  { q: 'All five basic tastes can be detected across the whole tongue.', a: true, e: 'The tongue map is a myth from a 1901 mistranslation.', ch: 3, g: 1 },
+  { q: 'Hunger and satiety can affect the olfactory sense.', a: true, e: 'So can mood, concentration, infections, gender and food temperature.', ch: 3, g: 1 },
+  { q: 'Descriptive panelists need a longer screening process than consumer panelists.', a: true, e: 'Descriptive panelists are highly trained and experienced; consumer panelists are selected from the public by demographics.', ch: 3, g: 1 },
+  { q: 'A slow cooker alone reliably makes raw kidney beans safe.', a: false, e: 'Soak, then boil hard for at least 10 minutes to destroy lectins.', ch: 4, g: 1 },
+  { q: 'Low water activity kills pathogens in dry foods.', a: false, e: 'It stops growth, not survival.', ch: 4, g: 1 },
+  { q: 'Complete hydrogenation produces trans fat.', a: false, e: 'Partial hydrogenation does; complete hydrogenation yields saturated fat.', ch: 4, g: 1 },
+  { q: 'Elastin breaks down into gelatin under moist heat.', a: false, e: 'Only collagen does; elastin must be trimmed.', ch: 7, g: 1 },
+  { q: 'USDA grading is mandatory.', a: false, e: 'Grading is voluntary and producer-paid; inspection is mandatory.', ch: 7, g: 1 },
+  { q: 'The Academy’s 2025 vegetarian position paper covers pregnancy and childhood.', a: false, e: 'It covers non-pregnant, non-lactating adults only.', ch: 6, g: 1 },
+  // Ch 1
+  { q: 'Richardson et al. (2023) found that 6 of the 9 planetary boundaries have been transgressed.', a: true, e: 'Six of nine planetary boundaries have been crossed.', ch: 1, f: 1 },
+  { q: 'Retail generates the largest share of global food waste.', a: false, e: 'Households ~60%, food service ~28%, retail ~12% (UNEP 2024).', ch: 1, f: 1 },
+  { q: 'About one-fifth of the food available globally is wasted, roughly 1.05 billion tons.', a: true, e: '~1.05 billion tons, about one-fifth of available food.', ch: 1, f: 1 },
+  { q: 'U.S. household food insecurity has fallen each year since 2021.', a: false, e: 'It rose: 10.2% (2021), 12.8% (2022), 13.7% (2024).', ch: 1, f: 1 },
+  { q: 'In 2024, about 13.7% of U.S. households were food insecure.', a: true, e: '10.2% (2021) → 12.8% (2022) → 13.7% (2024).', ch: 1, f: 1 },
+  { q: 'The greenhouse effect is caused entirely by human activity.', a: false, e: 'It occurs naturally, but human emissions, especially CO2, have substantially increased it.', ch: 1 },
+  { q: 'Conventional agriculture relies on mechanization, monocultures, and chemical fertilizers and pesticides.', a: true, e: 'It is an industrialized system that emphasizes productivity and profit.', ch: 1 },
+  { q: 'Sustainable agriculture is founded on ecological principles and is economically viable and socially conscious.', a: true, e: 'It is also able to maintain productivity over time.', ch: 1 },
+  { q: 'The Hunger Vital Sign is a 10-item food insecurity questionnaire.', a: false, e: 'It is a 2-item screening tool; best practice is universal screening plus a closed-loop referral.', ch: 1 },
+  { q: 'An ecological footprint estimates the land and ocean area needed to support a person’s consumption and absorb their waste.', a: true, e: 'That is the definition of an ecological footprint.', ch: 1 },
+  { q: 'A herbicide kills every plant it touches, including the crop.', a: false, e: 'A herbicide kills unwanted plants (weeds) while leaving others alone.', ch: 1 },
+  { q: 'Overfishing, biodiversity loss and pollution are examples of anthropogenic effects.', a: true, e: 'Anthropogenic effects are created or caused by human activities.', ch: 1 },
+  { q: 'GMOs have DNA altered by inserting transgenes not naturally found in the organism.', a: true, e: 'That is the definition of a genetically modified organism.', ch: 1 },
+  { q: 'An ecosystem includes only the living organisms in an area.', a: false, e: 'An ecosystem is plant, animal and microorganism communities plus the nonliving environment, interacting as a unit.', ch: 1 },
+  { q: 'Food insecurity means a household has difficulty providing enough food for all members due to lack of resources.', a: true, e: 'That is the definition of food insecurity.', ch: 1 },
+  // Ch 2
+  { q: 'If risk rises from 2 to 4 cases per 10,000, the relative risk is 2.0.', a: true, e: '4 per 10,000 ÷ 2 per 10,000 = 2.0. The absolute increase is 2 extra cases per 10,000.', ch: 2 },
+  { q: 'A relative risk of 2.0 always means a large number of extra cases.', a: false, e: 'The absolute difference can be tiny: going from 2 to 4 per 10,000 is a relative risk of 2.0 but only 2 extra cases per 10,000.', ch: 2 },
+  { q: '“Nutritionist” is a protected credential in every state.', a: false, e: '“Nutritionist” is unregulated in many states; RDN is protected and verifiable.', ch: 2 },
+  { q: 'A cross-sectional survey can show whether the exposure came before the disease.', a: false, e: 'Exposure and disease are measured at one point in time, so it cannot show which came first.', ch: 2 },
+  { q: 'In a prospective cohort study, the disease has not yet occurred when the study begins.', a: true, e: 'Prospective = disease has not yet occurred; retrospective = it already has.', ch: 2 },
+  { q: 'In a retrospective cohort study, the disease has not yet occurred when the study begins.', a: false, e: 'In a retrospective cohort, the disease has already occurred when the study begins.', ch: 2 },
+  { q: 'A case-control study starts with people who have the outcome and looks backward at their exposures.', a: true, e: 'It compares them with a matched group without the outcome.', ch: 2 },
+  { q: 'A double-blind placebo-controlled design gives the strongest cause-and-effect evidence.', a: true, e: 'Neither participants nor investigators know group assignment.', ch: 2 },
+  { q: 'In a double-blind study, only the participants are unaware of group assignment.', a: false, e: 'Neither the participants nor the investigators know group assignment.', ch: 2 },
+  { q: 'Structure/function claims must be approved by FDA before they appear on a label.', a: false, e: 'They need no FDA approval, but a disclaimer is required. Health claims are the ones FDA reviews and authorizes.', ch: 2 },
+  { q: 'A health claim links a nutrient or substance to a disease or health condition.', a: true, e: 'Health claims are reviewed and authorized by FDA.', ch: 2 },
+  { q: 'Evidence-based practice relies on research evidence alone.', a: false, e: 'Sackett: best external evidence + professional expertise + client values and context.', ch: 2 },
+  { q: 'Popular press articles are written by journalists for the general public.', a: true, e: 'They appear in magazines, newspapers and books.', ch: 2 },
+  // Ch 3
+  { q: 'The probability of guessing correctly in a triangle test is 1/2.', a: false, e: 'Triangle = 1/3; duo-trio = 1/2.', ch: 3, f: 1 },
+  { q: 'Because its guessing probability is 1/2, a duo-trio test needs more judgments than a triangle test.', a: true, e: 'Triangle = 1/3, duo-trio = 1/2, so duo-trio needs more judgments.', ch: 3, f: 1 },
+  { q: 'Consumer panelists should be asked to rate technical attributes such as astringency intensity.', a: false, e: 'Consumers are untrained and are never asked to detect technical attributes; they judge acceptability or preference.', ch: 3 },
+  { q: 'Trained descriptive panelists are a good group to ask whether they like a product.', a: false, e: 'Training makes them unrepresentative of consumers; ask consumers about liking.', ch: 3 },
+  { q: 'About 75% of flavor comes from aroma.', a: true, e: 'Aroma is the largest contributor to flavor.', ch: 3, f: 1 },
+  { q: 'A refractometer measuring sugar concentration is an example of a chemical test.', a: false, e: 'It is a physical test (refractive index). Chemical tests include pH meters, Benedict/Fehling and atomic absorption spectroscopy.', ch: 3 },
+  { q: 'A pH meter is used for chemical testing of food.', a: true, e: 'Chemical tests: pH, sugars, saltiness, flavor, nutrient analysis.', ch: 3 },
+  { q: 'Umami is the taste of glutamate, found in meats, mushrooms, soy sauce, fish sauce and cheese.', a: true, e: 'Umami is the fifth basic taste.', ch: 3 },
+  { q: 'Flavor and taste mean the same thing.', a: false, e: 'Flavor is the combined senses of taste, aroma and mouthfeel.', ch: 3 },
+  { q: 'Retronasal olfaction is aroma reaching the nose from the back of the mouth.', a: true, e: 'It accounts for most of what we call flavor.', ch: 3 },
+  { q: 'A 9-point hedonic scale is an analytical test.', a: false, e: 'It is an affective test: it measures liking.', ch: 3 },
+  { q: 'Taste buds are found mostly on the upper surface of the tongue.', a: true, e: 'They are gustatory and supporting cells.', ch: 3 },
+  { q: 'Astringency, spice heat and cooling are part of mouthfeel.', a: true, e: 'Mouthfeel: astringency, spice heat, cooling, metallic.', ch: 3 },
+  { q: 'Objective evaluation relies on quantifiable results from laboratory instruments.', a: true, e: 'Its two types are physical tests and chemical tests.', ch: 3 },
+  { q: 'Nutrigenomics studies how food affects our genes and how our bodies respond to nutrients.', a: true, e: 'That is the definition of nutrigenomics.', ch: 3 },
+  { q: 'Adaptation is a gradual increase in the ability to distinguish odors over time.', a: false, e: 'Adaptation is a gradual decrease in the ability to distinguish odors.', ch: 3 },
+  // Ch 4
+  { q: 'Carbohydrates provide 9 kcal per gram.', a: false, e: 'Carbohydrates provide 4 kcal/g.', ch: 4, f: 1 },
+  { q: 'Starch gelatinization happens at roughly 60–85 °C.', a: true, e: 'Starch granules swell irreversibly when heated in water in that range.', ch: 4, f: 1 },
+  { q: 'Gelatinization reverses completely when a starch paste cools.', a: false, e: 'Gelatinization is irreversible. On cooling, chains re-align instead: that is retrogradation.', ch: 4 },
+  { q: 'Bread staling is caused by retrogradation.', a: true, e: 'Starch chains re-align on cooling and standing.', ch: 4 },
+  { q: 'Dextrinization makes starch thicken more, which is why brown roux is thicker than white roux.', a: false, e: 'Dextrinization splits starch into shorter chains, so it thickens less (but is sweeter and browner).', ch: 4 },
+  { q: 'Caramelization requires amino acids.', a: false, e: 'Caramelization is browning of sugar alone. The Maillard reaction needs reducing sugars plus amino groups.', ch: 4 },
+  { q: 'Blanching inactivates polyphenol oxidase (PPO).', a: true, e: 'That is how blanching prevents enzymatic browning.', ch: 4 },
+  { q: 'All enzymes are proteins.', a: true, e: 'Enzymes are protein biocatalysts.', ch: 4 },
+  { q: 'Enzymes are used up in the reactions they speed up.', a: false, e: 'Enzymes speed reactions without being destroyed.', ch: 4 },
+  { q: 'Partial hydrogenation creates trans fats.', a: true, e: 'Complete hydrogenation yields saturated fat instead.', ch: 4 },
+  { q: 'Water activity is a measure of a food’s total moisture content.', a: false, e: 'It measures how available the water is to microbes, not total moisture.', ch: 4 },
+  { q: 'Enrichment adds back nutrients lost during processing.', a: true, e: 'Example: the 1972 flour act (thiamin, riboflavin, niacin, iron).', ch: 4 },
+  { q: 'Enrichment and fortification mean the same thing.', a: false, e: 'Enrichment adds back nutrients lost in processing; fortification adds nutrients to prevent specific deficiencies in a population.', ch: 4 },
+  { q: 'Cellulose is a glucose polymer with alpha bonds that humans digest easily.', a: false, e: 'Cellulose has beta bonds; humans lack the enzyme, so it is indigestible and provides no calories.', ch: 4 },
+  { q: 'After slaughter, glycogen in animal muscle is converted to lactic acid.', a: true, e: 'Glycogen is the carbohydrate stored in animal muscle.', ch: 4 },
+  { q: 'Functional fiber is fiber that is intrinsic and intact in plants.', a: false, e: 'That is dietary fiber. Functional fiber is isolated, extracted or manufactured, with proven physiological benefit.', ch: 4 },
+  { q: 'Trans fats raise LDL and lower HDL.', a: true, e: 'That raises heart disease risk.', ch: 4 },
+  { q: 'Cis double bonds bend the fatty acid chain, which helps keep oils liquid.', a: true, e: 'Cis = hydrogens on the same side; trans = opposite sides, a straight chain like a saturated fat.', ch: 4 },
+  { q: 'Phytochemicals are essential nutrients.', a: false, e: 'They are non-nutritive plant chemicals that may help prevent disease.', ch: 4 },
+  { q: 'The 1972 flour enrichment act added thiamin, riboflavin, niacin and iron.', a: true, e: '1972: thiamin, riboflavin, niacin, iron.', ch: 4, f: 1 },
+  { q: 'Protein coagulation is the congealing and separating out of denatured proteins.', a: true, e: 'Denaturation usually comes first, then coagulation.', ch: 4 },
+  { q: 'Mechanical shear, such as whipping, can denature proteins.', a: true, e: 'Causes of denaturation: heat, alcohol, acids, salts, enzymes, mechanical shear.', ch: 4 },
+  // Ch 6
+  { q: 'A lacto-ovo vegetarian eats plant foods plus dairy and eggs.', a: true, e: 'Lacto = dairy, ovo = eggs.', ch: 6 },
+  { q: 'A pescatarian eats no meat except fish.', a: true, e: 'A pescatarian may also include eggs or dairy.', ch: 6 },
+  { q: 'A flexitarian follows a strictly vegetarian diet.', a: false, e: 'Flexitarian = primarily vegetarian with occasional meat; not strictly vegetarian.', ch: 6 },
+  { q: 'Any diet labeled “plant-based” lowers chronic disease risk.', a: false, e: 'A plant-based diet heavy in refined grains, juice, sweets, sweetened drinks and fries scores high on the uPDI, linked to higher chronic disease risk.', ch: 6 },
+  { q: 'On a vegan diet, vitamin B12 generally needs to come from fortified foods or supplements.', a: true, e: 'The Academy’s 2025 position paper names B12 as the nutrient needing supplements or fortified foods.', ch: 6 },
+  { q: 'Lower cardiovascular disease incidence was a vegetarian finding that reached moderate certainty.', a: true, e: 'That was the disease-prevention finding with moderate certainty.', ch: 6 },
+  { q: 'An ovo-vegetarian eats plant foods plus dairy.', a: false, e: 'Ovo = eggs. Plant foods plus dairy is lacto-vegetarian.', ch: 6 },
+  { q: 'A macrobiotic diet is grain-based with local vegetables and avoids refined foods.', a: true, e: 'It is Japanese in origin and avoids most animal products.', ch: 6 },
+  // Ch 7
+  { q: 'Oxymyoglobin is bright red.', a: true, e: 'It forms when myoglobin contacts oxygen.', ch: 7 },
+  { q: 'Nitric oxide myoglobin gives cured meats their pink color.', a: true, e: 'Think ham, bacon and hot dogs.', ch: 7 },
+  { q: 'More marbling lowers a beef quality grade.', a: false, e: 'Marbling raises the quality grade.', ch: 7 },
+  { q: 'USDA meat inspection is paid for with taxpayer funds.', a: true, e: 'Inspection is mandatory and taxpayer-funded; grading is voluntary and producer-paid.', ch: 7 },
+  { q: 'Braising is a dry heat cooking method.', a: false, e: 'Braising is moist heat (as are stewing, simmering and steaming). Dry heat: broiling, grilling, roasting, frying.', ch: 7 },
+  { q: 'Almost all of the iron and zinc in meat is retained whether or not the drippings are eaten.', a: true, e: 'Water-soluble nutrients (like B vitamins) are the ones lost in drippings.', ch: 7 },
+  { q: 'Discarding meat cooking liquid can lose 50% or more of the water-soluble nutrients.', a: true, e: 'B-vitamin loss is about 15% greater without drippings.', ch: 7, f: 1 },
+  { q: 'Meat sold only within one state may be inspected by a state program monitored by FSIS.', a: true, e: 'State programs are monitored by USDA FSIS.', ch: 7 },
+  { q: 'Collagen breaks down to gelatin under moist heat.', a: true, e: 'That is why moist heat tenderizes lean, well-exercised cuts.', ch: 7 },
+  { q: 'Myoglobin is the primary meat pigment and is purplish-red.', a: true, e: 'Oxygen turns it bright red (oxymyoglobin); too much oxygen turns it brownish-red (metmyoglobin).', ch: 7 },
+  // Ch 8
+  { q: 'Aquaculture now accounts for over half of aquatic animal production.', a: true, e: 'Aquaculture is the farming of fish and other aquatic species.', ch: 8, f: 1 },
+  { q: 'Salmon is a lean fish.', a: false, e: 'Salmon is fatty (5–10 g fat per 3 oz). Lean fish such as cod, haddock and tilapia have under 5 g.', ch: 8 },
+  { q: 'FDA’s Seafood HACCP rule is voluntary.', a: false, e: 'Seafood HACCP is mandatory for all domestic seafood processors and importers; NOAA grading is voluntary.', ch: 8 },
+  { q: 'Fish cooks faster than beef because it has short muscle fibers and much less collagen.', a: true, e: 'Its connective tissue also denatures easily.', ch: 8 },
+  { q: 'A retort pouch is a flexible, aseptic container.', a: true, e: 'Aseptic = void of microorganisms.', ch: 8 },
+  { q: 'Fish sticks and surimi are examples of comminuted products.', a: true, e: 'Comminuted products use animal parts as fillers in processed products.', ch: 8 },
+  { q: 'NOAA seafood grading is voluntary and fee-for-service.', a: true, e: 'Compare: FDA Seafood HACCP is mandatory.', ch: 8 },
+  // General facts
+  { q: 'UHT milk is processed at 280–300 °F for 2–6 seconds.', a: true, e: 'UHT = ultra-high temperature.', ch: 0, f: 1 },
+  { q: 'UHT milk is processed at 161 °F for 15 seconds.', a: false, e: 'UHT is 280–300 °F for 2–6 seconds. (161 °F for 15 seconds is standard HTST pasteurization.)', ch: 0, f: 1 }
+];
+
+const EXAM1_MC = [
+  // From the review guide
+  { q: 'What needs to be kept standardized in a product taste test?', o: ['Temperature', 'Plating', 'Portion size', 'All of the above'], a: 3, keep: 1, e: 'Temperature, plating and portion size all must be standardized so the product itself is the only difference.', ch: 3, g: 1 },
+  { q: 'Which is an example of a carrier?', o: ['Chips served with salsa', 'Water used to rinse between samples', 'The 3-digit code on a sample cup', 'A 9-point hedonic ballot'], e: 'A carrier is a food that accompanies and is eaten with the tested food.', ch: 3, g: 1 },
+  { q: 'A refractometer measures:', o: ['Sugar concentration (refractive index); a physical test', 'pH; a chemical test', 'Reducing sugars; a chemical test', 'Odor intensity; a sensory test'], e: 'A refractometer reads refractive index to give sugar concentration. It is a physical test.', ch: 3, g: 1 },
+  { q: 'Benedict and Fehling tests, atomic absorption spectroscopy and pH meters are used for:', o: ['Chemical tests', 'Physical tests', 'Affective tests', 'Descriptive sensory tests'], e: 'These measure pH, sugars and nutrients: chemical tests, a type of objective evaluation.', ch: 3, g: 1 },
+  { q: 'The largest contributor to flavor is:', o: ['Aroma (~75%)', 'Taste', 'Mouthfeel', 'Appearance'], e: 'About 75% of flavor comes from aroma.', ch: 3, g: 1, f: 1 },
+  { q: 'Which pairing of basic taste and source is correct?', o: ['Umami: glutamate in mushrooms and soy sauce', 'Bitter: sodium chloride', 'Sour: sugars', 'Salty: caffeine'], e: 'Sweet: sugars. Salty: sodium chloride. Sour: acids such as citrus. Bitter: caffeine, alkaloids, dark greens. Umami: glutamate (meat, mushrooms, soy sauce, cheese).', ch: 3, g: 1 },
+  { q: 'Risk rises from 2 to 4 cases per 10,000. What is the relative risk?', o: ['2.0', '0.5', '2 extra cases per 10,000', '200 extra cases per 10,000'], e: 'Relative risk = 4 per 10,000 ÷ 2 per 10,000 = 2.0.', ch: 2, g: 1 },
+  { q: 'Risk rises from 2 to 4 cases per 10,000. What is the absolute risk increase?', o: ['2 extra cases per 10,000', '2.0', '4 extra cases per 10,000', '0.5 extra cases per 10,000'], e: 'Absolute risk difference = 4 − 2 = 2 extra cases per 10,000.', ch: 2, g: 1 },
+  { q: '“Calcium supports strong bones” is a:', o: ['Structure/function claim', 'Health claim', 'Nutrient content claim'], e: 'It describes a nutrient’s role in body structure or function: no FDA approval, but a disclaimer is required.', ch: 2, g: 1 },
+  { q: '“Good source of fiber” is a:', o: ['Nutrient content claim', 'Health claim', 'Structure/function claim'], e: 'It describes the level of a nutrient in the food.', ch: 2, g: 1 },
+  { q: 'Sackett’s three pillars of evidence-based practice are:', o: ['Best external evidence, professional expertise, client values and context', 'Peer review, popular press, expert opinion', 'Randomization, blinding, placebo control', 'Cost, convenience, taste'], e: 'EBP = best external evidence + professional expertise + client values and context.', ch: 2, g: 1 },
+  { q: 'Which credential is protected and verifiable?', o: ['RDN', 'Nutritionist', 'Health coach', 'Wellness consultant'], e: 'RDN is protected and verifiable; “nutritionist” is unregulated in many states.', ch: 2, g: 1 },
+  { q: 'What is the best way for a clinic to address food insecurity?', o: ['Universal screening with the Hunger Vital Sign plus a closed-loop referral', 'Screening only patients who appear underweight', 'Handing every patient a food pantry flyer with no screening or follow-up', 'Asking about food only if the patient brings it up'], e: 'Screen everyone with the 2-item Hunger Vital Sign and close the loop on referrals.', ch: 1, g: 1 },
+  { q: 'Which monosaccharide circulates in the blood?', o: ['Glucose', 'Fructose', 'Galactose', 'Sucrose'], e: 'The three monosaccharides are glucose, fructose and galactose; glucose circulates in the blood. Sucrose is a disaccharide.', ch: 4, g: 1 },
+  { q: 'How are carbohydrates classified?', o: ['Monosaccharides, disaccharides, oligosaccharides, polysaccharides', 'Saturated, monounsaturated, polyunsaturated', 'Primary, secondary, tertiary, quaternary', 'Essential, nonessential, conditional'], e: 'Carbohydrates are classified by the number of sugar units.', ch: 4, g: 1 },
+  { q: 'Why can humans digest starch but not cellulose?', o: ['Starch has alpha bonds; cellulose has beta bonds, and humans lack the enzyme for beta bonds', 'Cellulose is made of fructose, which humans cannot absorb', 'Starch is a monosaccharide; cellulose is a polysaccharide', 'Cellulose is a protein, not a carbohydrate'], e: 'Both are glucose polymers. The bond type is the difference.', ch: 4, g: 1 },
+  { q: 'The two essential fatty acids are:', o: ['Alpha-linolenic acid (omega-3) and linoleic acid (omega-6)', 'EPA and DHA', 'Oleic acid and stearic acid', 'Palmitic acid and lauric acid'], e: 'ALA (omega-3) and linoleic acid (omega-6) must come from the diet.', ch: 4, g: 1 },
+  { q: 'Which statement about cis and trans bonds is correct?', o: ['Trans bonds put the hydrogens on opposite sides, straightening the chain like a saturated fat; trans fats raise LDL and lower HDL', 'Cis bonds put the hydrogens on opposite sides, straightening the chain', 'Trans fats lower LDL and raise HDL', 'Cis bonds make fats solid at room temperature'], e: 'Cis = same side, bent chain (liquid oils). Trans = opposite sides, straight chain; raises LDL, lowers HDL, raising heart disease risk.', ch: 4, g: 1 },
+  { q: 'Which is NOT a function of water in foods?', o: ['Providing 4 kcal per gram', 'Heat transfer medium', 'Universal solvent and dispersing agent', 'Participant in chemical reactions such as hydrolysis'], e: 'Water provides no energy. Its functions: heat transfer, universal solvent, dispersing agent, participant in reactions (hydrolysis), and effects on texture, freshness and shelf life (water activity).', ch: 4, g: 1 },
+  { q: 'Which is NOT a role of carbohydrates in food?', o: ['Supplying essential amino acids', 'Sweetening', 'Thickening and gelling', 'Bulking, flavor and pigments in thermally processed foods'], e: 'Carbohydrate roles: sweeteners, thickeners, bulking agents, gelling, flavor, and pigments in thermally processed foods.', ch: 4, g: 1 },
+  { q: 'Lecithin in egg yolk keeps mayonnaise stable because it is a phospholipid that:', o: ['Has a water-loving phosphate head and fat-loving tails, so it acts as an emulsifier', 'Adds hydrogen to unsaturated fatty acids', 'Lowers water activity so microbes cannot grow', 'Gelatinizes when heated, thickening the sauce'], e: 'Phospholipids bridge water and fat, which makes them emulsifiers.', ch: 4, g: 1 },
+  { q: 'Which nutrient generally cannot be met from food alone on a vegan diet?', o: ['Vitamin B12', 'Vitamin C', 'Fiber', 'Folate'], e: 'B12 needs fortified foods or supplements in a vegan pattern (Academy 2025 position paper).', ch: 6, g: 1 },
+  { q: 'Which vegetarian disease-prevention finding reached moderate certainty?', o: ['Lower cardiovascular disease incidence', 'Prevention of all cancers', 'Guaranteed weight loss in every adult', 'Elimination of all nutrient deficiencies'], e: 'Lower cardiovascular disease incidence reached moderate certainty.', ch: 6, g: 1 },
+  { q: 'A lean fish has:', o: ['Under 5 g total fat per 3-oz serving', 'Under 10 g total fat per 3-oz serving', '5–10 g total fat per 3-oz serving', 'Under 1 g total fat per 3-oz serving'], e: 'Lean: under 5 g (cod, haddock, tilapia). Fatty: 5–10 g (salmon, mackerel, tuna).', ch: 8, g: 1, f: 1 },
+  { q: 'Why does fish cook faster than beef?', o: ['Short muscle fibers, much less collagen, and connective tissue that denatures easily', 'More elastin, which melts at low temperatures', 'More marbling, which conducts heat', 'More myoglobin'], e: 'Fish muscle has short fibers and little collagen.', ch: 8, g: 1 },
+  { q: 'A steak left in air turns brownish-red because of:', o: ['Metmyoglobin (iron converted to the ferric state)', 'Oxymyoglobin', 'Nitric oxide myoglobin', 'Myoglobin'], e: 'Excessive oxygen exposure converts the iron to the ferric state, forming metmyoglobin.', ch: 7, g: 1 },
+  // Extra practice
+  { q: 'According to Richardson et al. (2023), how many planetary boundaries have been transgressed?', o: ['6 of 9', '3 of 9', '9 of 9', '4 of 9'], e: 'Six of nine.', ch: 1, f: 1 },
+  { q: 'Which breakdown of global food waste is correct (UNEP 2024)?', o: ['Households ~60%, food service ~28%, retail ~12%', 'Retail ~60%, food service ~28%, households ~12%', 'Food service ~60%, households ~28%, retail ~12%', 'Households, food service and retail ~33% each'], e: 'Households are the largest source.', ch: 1, f: 1 },
+  { q: 'How much food is wasted globally?', o: ['About 1.05 billion tons, roughly one-fifth of available food', 'About 100 million tons, roughly 1% of available food', 'About 5 billion tons, roughly half of available food', 'About 1.05 billion tons, roughly two-thirds of available food'], e: '~1.05 billion tons, about one-fifth.', ch: 1, f: 1 },
+  { q: 'Which sequence shows U.S. household food insecurity correctly?', o: ['10.2% (2021) → 12.8% (2022) → 13.7% (2024)', '13.7% (2021) → 12.8% (2022) → 10.2% (2024)', '5.0% (2021) → 7.5% (2022) → 9.0% (2024)', '10.2% in every year'], e: 'Food insecurity has been rising.', ch: 1, f: 1 },
+  { q: 'The Hunger Vital Sign is:', o: ['A 2-item food insecurity screening tool', 'A 10-item dietary recall', 'A blood test for malnutrition', 'A body mass index cutoff'], e: 'Best practice: universal screening plus a closed-loop referral.', ch: 1 },
+  { q: 'What is the probability of guessing correctly in a triangle test?', o: ['1/3', '1/2', '1/4', '2/3'], e: 'Three samples, two identical: a 1 in 3 chance of picking the odd one by guessing.', ch: 3, f: 1 },
+  { q: 'Why does a duo-trio test need more judgments than a triangle test?', o: ['Its guessing probability is 1/2 instead of 1/3', 'It uses untrained consumers', 'It measures liking instead of difference', 'It has no reference sample'], e: 'A higher chance of guessing right means more judgments are needed.', ch: 3, f: 1 },
+  { q: 'Which is an affective test?', o: ['9-point hedonic scale', 'Triangle test', 'Duo-trio test', 'Descriptive analysis'], e: 'Affective tests measure liking: paired preference, ranking, hedonic scale.', ch: 3 },
+  { q: 'Which is an analytical test?', o: ['Triangle test', 'Paired preference test', 'Ranking by liking', '9-point hedonic scale'], e: 'Analytical tests: triangle, duo-trio, paired difference, descriptive analysis.', ch: 3 },
+  { q: 'The tongue map is:', o: ['A myth from a 1901 mistranslation; all five tastes are detected across the whole tongue', 'Accurate: sweet is detected only at the tip', 'Accurate: bitter is detected only at the back', 'A tool used by descriptive panels'], e: 'The tongue map is a myth.', ch: 3 },
+  { q: 'Mouthfeel includes:', o: ['Astringency, spice heat, cooling, metallic', 'Sweet, salty, sour, bitter', 'Color, gloss, shape', 'Aroma reaching the nose from the mouth'], e: 'Mouthfeel is how food feels in the mouth.', ch: 3 },
+  { q: 'Which factors can affect the olfactory sense?', o: ['Hunger and satiety', 'Mood and concentration', 'Infections and food temperature', 'All of the above'], a: 3, keep: 1, e: 'Also gender.', ch: 3 },
+  { q: 'Most of what we call “flavor” reaches the nose through:', o: ['Retronasal olfaction', 'Taste buds on the tongue tip', 'Mouthfeel receptors', 'Adaptation'], e: 'Retronasal olfaction: aroma reaching the nose from the back of the mouth.', ch: 3 },
+  { q: 'How much energy do carbohydrates provide?', o: ['4 kcal/g', '9 kcal/g', '7 kcal/g', '0 kcal/g'], e: 'Carbohydrates provide 4 kcal/g.', ch: 4, f: 1 },
+  { q: 'Starch gelatinizes at roughly:', o: ['60–85 °C', '0–10 °C', '100–120 °C', '150–180 °C'], e: '~60–85 °C.', ch: 4, f: 1 },
+  { q: 'Which process explains why brown roux thickens less than white roux?', o: ['Dextrinization', 'Gelatinization', 'Retrogradation', 'Hydrogenation'], e: 'Dry heat splits starch into shorter chains: sweeter, browner, thickens less.', ch: 4 },
+  { q: 'A gel “weeping” liquid on standing (syneresis) is linked to:', o: ['Retrogradation', 'Gelatinization', 'Caramelization', 'Hydrolysis'], e: 'Starch chains re-align on cooling and standing.', ch: 4 },
+  { q: 'Which enzyme makes cut apples and avocados brown?', o: ['Polyphenol oxidase (PPO)', 'Amylase', 'Lipase', 'Pepsin'], e: 'PPO oxidizes phenols to brown melanin.', ch: 4 },
+  { q: 'The Maillard reaction requires:', o: ['Reducing sugars and amino groups', 'Sugar alone and high dry heat', 'Polyphenol oxidase and oxygen', 'Hydrogen and a metal catalyst'], e: 'Sugar alone under high dry heat is caramelization.', ch: 4 },
+  { q: 'Complete hydrogenation of an unsaturated oil yields:', o: ['Saturated fat', 'Trans fat', 'Omega-3 fatty acids', 'Phospholipids'], e: 'Partial hydrogenation creates trans fats; complete hydrogenation yields saturated fat.', ch: 4 },
+  { q: 'Lowering water activity:', o: ['Stops microbial growth and extends shelf life, but does not kill pathogens already present', 'Kills all pathogens in the food', 'Raises total moisture', 'Speeds up spoilage'], e: 'Low water activity stops growth, not survival.', ch: 4 },
+  { q: 'The Flour Enrichment Act added:', o: ['1972: thiamin, riboflavin, niacin, iron', '1972: vitamin C, calcium, zinc, iodine', '1972: folic acid and vitamin B12', '1990: vitamin D and calcium'], e: '1972: thiamin, riboflavin, niacin, iron.', ch: 4, f: 1 },
+  { q: 'Which statement about enrichment and fortification is correct?', o: ['Enrichment adds back nutrients lost in processing; fortification adds nutrients to prevent specific deficiencies in a population', 'They are the same process', 'Enrichment adds nutrients never present in the food; fortification restores lost nutrients', 'Fortification removes antinutrients; enrichment adds fiber'], e: 'Enrichment = add back; fortification = prevent deficiencies.', ch: 4 },
+  { q: 'Raw kidney beans are made safe by:', o: ['Soaking, then boiling hard for at least 10 minutes', 'Cooking on low in a slow cooker', 'Soaking overnight only', 'Freezing for 24 hours'], e: 'Hard boiling destroys the lectins.', ch: 4 },
+  { q: 'All enzymes are:', o: ['Proteins', 'Carbohydrates', 'Lipids', 'Destroyed by the reactions they speed up'], e: 'Enzymes are protein biocatalysts that are not destroyed.', ch: 4 },
+  { q: 'Amino acids contain which elements?', o: ['C, H, O and N', 'C, H and O only', 'C, H, O and P only', 'N and P only'], e: 'The alpha carbon is bonded to an amino group, a carboxyl group, a hydrogen and an R side group.', ch: 4 },
+  { q: 'Which is a food foam?', o: ['Angel food cake', 'Mayonnaise', 'Vinaigrette', 'Gravy'], e: 'A foam is air dispersed in a liquid or solid. Mayonnaise is an emulsion.', ch: 4 },
+  { q: 'Which foods raise a person’s unhealthful plant-based diet index (uPDI) score?', o: ['Refined grains, juice, sweets, sweetened drinks, fries', 'Whole grains, legumes, nuts', 'Leafy greens and berries', 'Fish and eggs'], e: 'A higher uPDI score means higher chronic disease risk.', ch: 6 },
+  { q: 'Which connective tissue resists cooking and must be trimmed?', o: ['Elastin', 'Collagen', 'Marbling', 'Myoglobin'], e: 'Collagen breaks down to gelatin; elastin does not.', ch: 7 },
+  { q: 'Freshly cut meat that has not touched oxygen is purplish-red because of:', o: ['Myoglobin', 'Oxymyoglobin', 'Metmyoglobin', 'Nitric oxide myoglobin'], e: 'Myoglobin is the primary meat pigment.', ch: 7 },
+  { q: 'Who grades meat, and who pays?', o: ['USDA AMS; the producer pays (voluntary)', 'USDA FSIS; taxpayers pay (mandatory)', 'FDA; the retailer pays', 'NOAA; taxpayers pay'], e: 'Grading = voluntary, AMS, producer-paid. Inspection = mandatory, FSIS, taxpayer-funded.', ch: 7 },
+  { q: 'Which agency carries out mandatory inspection of beef, veal, pork and lamb?', o: ['USDA FSIS', 'USDA AMS', 'NOAA', 'EPA'], e: 'FSIS = Food Safety and Inspection Service.', ch: 7 },
+  { q: 'If meat drippings are not eaten, B-vitamin loss is about:', o: ['15% greater', '15% smaller', '50% smaller', 'Unchanged'], e: 'And 50% or more of water-soluble nutrients can be lost if the cooking liquid is discarded.', ch: 7, f: 1 },
+  { q: 'Which nutrients are almost entirely retained in cooked meat whether or not drippings are eaten?', o: ['Iron and zinc', 'Thiamin and riboflavin', 'Vitamin C and folate', 'All water-soluble vitamins'], e: 'Iron and zinc stay in the meat.', ch: 7 },
+  { q: 'Which is a moist heat method?', o: ['Braising', 'Broiling', 'Grilling', 'Roasting'], e: 'Moist heat: braising, stewing, simmering, steaming.', ch: 7 },
+  { q: 'UHT milk is processed at:', o: ['280–300 °F for 2–6 seconds', '161 °F for 15 seconds', '145 °F for 30 minutes', '212 °F for 1 minute'], e: 'UHT = ultra-high temperature.', ch: 0, f: 1 },
+  { q: 'What share of aquatic animal production now comes from aquaculture?', o: ['Over half', 'About 10%', 'About one-quarter', 'Almost none'], e: 'Aquaculture is now over half.', ch: 8, f: 1 },
+  { q: 'Which is a fatty fish?', o: ['Mackerel', 'Cod', 'Haddock', 'Tilapia'], e: 'Fatty: salmon, mackerel, tuna (5–10 g fat per 3 oz).', ch: 8 },
+  { q: 'Which seafood program is mandatory?', o: ['FDA Seafood HACCP', 'NOAA grading', 'USDA AMS grading', 'None; all seafood programs are voluntary'], e: 'Seafood HACCP is mandatory for domestic processors and importers.', ch: 8 },
+  { q: 'In a prospective cohort study:', o: ['Disease has not yet occurred when the study begins', 'Disease has already occurred when the study begins', 'Participants are randomly assigned to groups', 'Exposure and disease are measured at one point in time'], e: 'Prospective = looking forward from before the disease occurs.', ch: 2 },
+  { q: 'Which design gives the strongest cause-and-effect evidence?', o: ['Double-blind placebo-controlled design', 'Cross-sectional survey', 'Case-control study', 'Retrospective cohort'], e: 'Neither participants nor investigators know group assignment.', ch: 2 },
+  { q: 'Peer review is best described as:', o: ['A quality filter, not a guarantee', 'Proof that the conclusions are correct', 'Review by journalists for readability', 'A requirement for popular press articles'], e: 'Peer-reviewed findings are regularly overturned.', ch: 2 }
+];
+
+const EXAM1_SCEN = [
+  // Ch 1
+  { q: 'A coastal town’s fish stocks collapse after decades of heavy commercial fishing. Which term best describes this?', o: ['Anthropogenic effect', 'Greenhouse effect', 'Ecological literacy', 'Sustainable agriculture'], e: 'An anthropogenic effect is caused by human activity. Overfishing is a textbook example.', ch: 1 },
+  { q: 'A farm plants the same corn hybrid on every field each year, uses large machinery, and applies synthetic fertilizer and pesticides to maximize yield and profit. This is:', o: ['Conventional agriculture', 'Sustainable agriculture', 'Aquaculture', 'Ecological literacy'], e: 'Mechanization, monocultures, chemical inputs, and an emphasis on productivity and profit.', ch: 1 },
+  { q: 'A farmer rotates crops to build soil health, pays workers fairly, and stays profitable year after year. This best fits:', o: ['Sustainable agriculture', 'Conventional agriculture', 'Comminution', 'Fortification'], e: 'Ecological principles + economically viable + socially conscious + maintains productivity.', ch: 1 },
+  { q: 'A student uses an online calculator to estimate how much land and ocean area it takes to supply their lifestyle and absorb their waste. They are measuring their:', o: ['Ecological footprint', 'Biodiversity', 'Ecosystem', 'Greenhouse effect'], e: 'Land and ocean area to support consumption and assimilate waste = ecological footprint.', ch: 1 },
+  { q: 'By the last week of each month a family runs out of money, and the parents skip meals so the children can eat. The household is experiencing:', o: ['Food insecurity', 'Food fortification', 'Ecological literacy', 'An anthropogenic effect'], e: 'Difficulty providing enough food for all members due to lack of resources.', ch: 1 },
+  { q: 'A clinic asks every patient two quick questions: whether they worried food would run out before they had money to buy more, and whether it did. The clinic is using:', o: ['The Hunger Vital Sign', 'A hedonic scale', 'A triangle test', 'A case-control study'], e: 'A 2-item screen; best practice pairs universal screening with a closed-loop referral.', ch: 1 },
+  { q: 'A corn variety has a bacterial gene inserted into its DNA so it makes its own insect toxin. It is a:', o: ['Genetically modified organism (GMO)', 'Functional food', 'Phytochemical', 'Comminuted product'], e: 'GMOs have DNA altered by inserting transgenes not naturally found in the organism.', ch: 1 },
+  { q: 'A wheat grower sprays a product that kills dandelions and thistles but leaves the wheat unharmed. The product is a(n):', o: ['Herbicide', 'Enzyme', 'Emulsifier', 'Lectin'], e: 'A herbicide kills unwanted plants while leaving others alone.', ch: 1 },
+  { q: 'In a wetland, plants, fish, birds and microbes interact with the water, soil and sunlight as one functioning unit. This is a(n):', o: ['Ecosystem', 'Ecological footprint', 'Monoculture', 'Retort pouch'], e: 'Living communities plus the nonliving environment, interacting as a unit.', ch: 1 },
+  { q: 'A rainforest plot holds thousands of species of plants, insects, fungi and microorganisms. Ecologists would say it has high:', o: ['Biodiversity', 'Water activity', 'Marbling', 'Relative risk'], e: 'Biodiversity is the variety of life forms in a community.', ch: 1 },
+  { q: 'A dietitian explains to a class how soil health, pollinators, water use and food choices are all connected. The dietitian is demonstrating:', o: ['Ecological literacy', 'Food insecurity', 'Nutrigenomics', 'Molecular gastronomy'], e: 'Understanding the interconnected systems that sustain the web of life.', ch: 1 },
+  { q: 'Rising atmospheric CO2 from burning fossil fuels traps more heat near Earth’s surface. This intensifies the:', o: ['Greenhouse effect', 'Maillard reaction', 'Ecological footprint', 'Hydrogenation process'], e: 'A naturally occurring effect, substantially increased by human emissions.', ch: 1 },
+  { q: 'A scientist studies how heat changes the proteins in milk so a company can make a safer, longer-lasting product for the public. This work is an example of:', o: ['Food science', 'Ecological literacy', 'Popular press', 'Sensory adaptation'], e: 'Food science studies food’s physical, biochemical and chemical nature, including processing and improving food for public benefit.', ch: 1 },
+  // Ch 2
+  { q: 'Researchers survey 5,000 adults once, recording each person’s current soda intake and current BMI. Which design is this?', o: ['Cross-sectional survey', 'Prospective cohort', 'Case-control study', 'Double-blind placebo-controlled design'], e: 'Exposure and outcome are measured at one point in time, so it cannot show which came first.', ch: 2 },
+  { q: 'Researchers enroll 10,000 healthy nurses, record their diets, and follow them for 20 years to see who develops heart disease. Which design is this?', o: ['Prospective cohort', 'Retrospective cohort', 'Case-control study', 'Cross-sectional survey'], e: 'Classified by exposure and followed forward; the disease has not yet occurred at the start.', ch: 2 },
+  { q: 'Using factory records from the 1990s, researchers identify workers who were exposed to a solvent and check which of them have since developed cancer. Which design is this?', o: ['Retrospective cohort', 'Prospective cohort', 'Randomized design', 'Cross-sectional survey'], e: 'Groups are defined by past exposure, and the disease has already occurred when the study begins.', ch: 2 },
+  { q: 'Researchers recruit 200 people with stomach cancer and 200 similar people without it, then ask both groups about their past intake of pickled foods. Which design is this?', o: ['Case-control study', 'Prospective cohort', 'Randomized design', 'Cross-sectional survey'], e: 'Case-control studies start with the outcome and look backward at exposures.', ch: 2 },
+  { q: 'Participants get either a vitamin D capsule or an identical-looking sugar pill, assigned by computer. Neither the participants nor the researchers know who got which. This is a:', o: ['Double-blind placebo-controlled design', 'Retrospective cohort', 'Case-control study', 'Cross-sectional survey'], e: 'Random assignment + double blinding + placebo = strongest cause-and-effect evidence.', ch: 2 },
+  { q: 'A headline says a food “doubles your cancer risk.” In the study, risk went from 1 in 100,000 to 2 in 100,000. What is the most accurate summary?', o: ['Relative risk is 2.0, but the absolute increase is only 1 extra case per 100,000', 'Relative risk is 1.0, so there is no effect', 'Absolute risk doubled from 50% to 100%', 'Relative risk is 0.5, so the food is protective'], e: 'Relative risk = 2 ÷ 1 = 2.0; absolute risk difference = 1 extra case per 100,000. Headlines often report only the relative number.', ch: 2 },
+  { q: 'A cereal box says: “Diets low in sodium may reduce the risk of high blood pressure.” This is a:', o: ['Health claim', 'Nutrient content claim', 'Structure/function claim'], e: 'It links a nutrient to a disease or health condition, so FDA must authorize it.', ch: 2 },
+  { q: 'A yogurt label says “High in calcium.” This is a:', o: ['Nutrient content claim', 'Health claim', 'Structure/function claim'], e: 'It describes the level of a nutrient.', ch: 2 },
+  { q: 'A supplement label says “Fiber supports digestive regularity,” followed by a disclaimer that FDA has not evaluated the statement. This is a:', o: ['Structure/function claim', 'Health claim', 'Nutrient content claim'], e: 'It describes a role in body function: no FDA approval, disclaimer required.', ch: 2 },
+  { q: 'A dietitian combines a recent meta-analysis, years of clinical experience, and a client’s cultural food preferences and budget to build a meal plan. This is:', o: ['Evidence-based practice', 'Popular press', 'A case-control study', 'Ecological literacy'], e: 'Sackett: best external evidence + professional expertise + client values and context.', ch: 2 },
+  { q: 'A friend wants nutrition advice from someone whose credential is legally protected and can be verified. They should look for:', o: ['An RDN', 'A “nutritionist”', 'A wellness influencer', 'A health coach certificate'], e: '“Nutritionist” is unregulated in many states.', ch: 2 },
+  { q: 'A student reads a magazine story by a journalist that summarizes a new diet study for general readers. This source is a:', o: ['Popular press article', 'Peer-reviewed article', 'Case-control study', 'Health claim'], e: 'Written by journalists for the public; found in magazines, newspapers, books.', ch: 2 },
+  { q: 'Before a journal publishes a manuscript, three university researchers judge whether its methods are sound and its conclusions supported. The published paper is a:', o: ['Peer-reviewed article', 'Popular press article', 'Structure/function claim', 'Cross-sectional survey'], e: 'Reviewed by academic experts for significance, methods and interpretation.', ch: 2 },
+  { q: 'In a weight-loss trial, a coin flip decides whether each participant gets the new diet or the usual diet. This feature is called:', o: ['Randomized design', 'Retrospective design', 'Case-control design', 'Cross-sectional design'], e: 'Subjects are assigned to groups randomly.', ch: 2 },
+  // Ch 3
+  { q: 'A company wants to know if cutting sugar by 10% makes a noticeable difference. Each panelist gets three samples, two identical, and picks the odd one. This is a:', o: ['Triangle test', 'Duo-trio test', 'Hedonic scale', 'Paired preference test'], e: 'Triangle test: analytical, guessing probability 1/3.', ch: 3 },
+  { q: 'Panelists taste a reference sample, then two coded samples, and pick the one that matches the reference. This is a:', o: ['Duo-trio test', 'Triangle test', 'Ranking test', 'Hedonic scale'], e: 'Duo-trio: guessing probability 1/2, so more judgments are needed.', ch: 3 },
+  { q: '100 shoppers rate a new granola bar from “dislike extremely” to “like extremely.” This is a:', o: ['Hedonic scale, an affective test', 'Triangle test, an analytical test', 'Descriptive analysis, an analytical test', 'Chemical test, an objective evaluation'], e: 'Rating liking = hedonic scale (affective).', ch: 3 },
+  { q: 'A highly trained panel scores the crispness, saltiness and oiliness of five potato chips on a 15-point intensity scale. Which panel is this?', o: ['Descriptive panel', 'Consumer panel', 'Hedonic panel', 'Carrier panel'], e: 'Descriptive panelists are highly trained to quantify specific sensory differences, never consumers.', ch: 3 },
+  { q: 'A new salsa is tested served on plain tortilla chips. The chips are the:', o: ['Carrier', 'Reference sample', 'Placebo', 'Hedonic scale'], e: 'A carrier accompanies and is eaten with the tested food.', ch: 3 },
+  { q: 'You walk into a bakery and the bread smell is overwhelming, but ten minutes later you barely notice it. This is:', o: ['Adaptation', 'Retronasal olfaction', 'Umami', 'Astringency'], e: 'A gradual decrease in the ability to distinguish odors over time.', ch: 3 },
+  { q: 'With a stuffy nose from a cold, a favorite meal tastes bland. The best explanation is:', o: ['Aroma can’t reach the nose (retronasal olfaction), and aroma is ~75% of flavor', 'Taste buds stop working during a cold', 'The tongue map shifts during illness', 'Mouthfeel receptors are blocked'], e: 'Most of what we call flavor is aroma.', ch: 3 },
+  { q: 'Strong black tea leaves your mouth feeling dry and puckered. This sensation is part of:', o: ['Mouthfeel (astringency)', 'Umami', 'Retronasal olfaction', 'Adaptation'], e: 'Mouthfeel: astringency, spice heat, cooling, metallic.', ch: 3 },
+  { q: 'Parmesan, mushrooms and soy sauce share a savory, brothy taste from glutamate. This taste is:', o: ['Umami', 'Bitter', 'Sour', 'Sweet'], e: 'Umami = glutamate.', ch: 3 },
+  { q: 'A lab measures the pH of yogurt to confirm it is acidic enough. This is a(n):', o: ['Chemical test (objective evaluation)', 'Physical test (objective evaluation)', 'Affective test', 'Descriptive panel'], e: 'pH is a chemical test.', ch: 3 },
+  { q: 'A juice plant uses a refractometer to check the sugar content of every batch. This is a(n):', o: ['Physical test (objective evaluation)', 'Chemical test (objective evaluation)', 'Affective test', 'Triangle test'], e: 'Sugar concentration by refractometer is a physical test.', ch: 3 },
+  { q: 'An instrument measures the force needed to bite through a cookie so a new recipe matches the original’s texture. This is a(n):', o: ['Physical test', 'Chemical test', 'Hedonic test', 'Duo-trio test'], e: 'Texture is measured with physical tests.', ch: 3 },
+  { q: 'A chef uses sodium alginate and a calcium bath to turn fruit juice into “caviar” spheres, relying on an understanding of the physical and chemical changes involved. This is:', o: ['Molecular gastronomy', 'Nutrigenomics', 'Comminution', 'Hydrogenation'], e: 'Modern cooking that identifies physical and chemical changes to create the best flavor and texture.', ch: 3 },
+  { q: 'A researcher studies why some people’s genes make their blood pressure especially sensitive to salt, and how diet changes gene expression. This field is:', o: ['Nutrigenomics', 'Molecular gastronomy', 'Sensory evaluation', 'Ecological literacy'], e: 'How food affects our genes and how our bodies respond to nutrients.', ch: 3 },
+  { q: 'Which question is appropriate to ask a consumer panel?', o: ['“Which sample do you prefer?”', '“Rate the intensity of the metallic aftertaste.”', '“Quantify the astringency of each sample.”', '“Score the crispness on a 15-point scale.”'], e: 'Consumers judge acceptability or preference, never technical attributes.', ch: 3 },
+  { q: 'A product developer wants to know whether people like a new low-sugar cookie better than the original. Which type of test fits?', o: ['Affective test', 'Analytical test', 'Chemical test', 'Physical test'], e: 'Liking or preference = affective.', ch: 3 },
+  { q: 'Before a taste test, a manager makes sure every sample is served at the same temperature, on the same plate, in the same portion size. Why?', o: ['So the only difference panelists judge is the product itself', 'To raise the guessing probability', 'To turn an affective test into an analytical one', 'To cause adaptation'], e: 'Standardizing temperature, plating and portion size removes outside influences.', ch: 3 },
+  // Ch 4
+  { q: 'Flour stirred into simmering broth makes the gravy thicken as the starch granules swell. This is:', o: ['Gelatinization', 'Retrogradation', 'Dextrinization', 'Caramelization'], e: 'Starch granules heated in water swell irreversibly (about 60–85 °C).', ch: 4 },
+  { q: 'Bread left on the counter for two days turns firm and stale. The main cause is:', o: ['Retrogradation', 'Gelatinization', 'Maillard reaction', 'Hydrogenation'], e: 'Starch chains re-align on cooling and standing.', ch: 4 },
+  { q: 'A cook browns flour in fat for a dark gumbo roux and notices it thickens less than a white roux. Why?', o: ['Dextrinization split the starch into shorter chains', 'Gelatinization was blocked by the fat', 'Retrogradation happened in the pan', 'Enzymatic browning destroyed the starch'], e: 'Dry heat → shorter chains → sweeter, browner, thickens less.', ch: 4 },
+  { q: 'Leftover pudding in the fridge has a puddle of liquid on top the next day. This weeping (syneresis) is caused by:', o: ['Retrogradation', 'Gelatinization', 'Caramelization', 'Fortification'], e: 'Retrogradation causes bread staling and gels weeping.', ch: 4 },
+  { q: 'A steak develops a brown, savory crust in a hot pan as sugars react with amino groups. This is the:', o: ['Maillard reaction', 'Caramelization', 'Enzymatic browning', 'Dextrinization'], e: 'Non-enzymatic reaction of reducing sugars with amino groups.', ch: 4 },
+  { q: 'Plain table sugar is heated alone in a dry pan until it turns amber. This is:', o: ['Caramelization', 'Maillard reaction', 'Enzymatic browning', 'Gelatinization'], e: 'Browning of sugar alone under high dry heat.', ch: 4 },
+  { q: 'A sliced avocado turns brown on the counter. This is:', o: ['Enzymatic browning by polyphenol oxidase (PPO)', 'The Maillard reaction', 'Caramelization', 'Metmyoglobin formation'], e: 'PPO oxidizes phenols to brown melanin.', ch: 4 },
+  { q: 'Green beans are blanched in boiling water before freezing. The main reason is to:', o: ['Inactivate enzymes such as polyphenol oxidase', 'Raise water activity', 'Hydrogenate the oils', 'Add back lost nutrients'], e: 'Blanching inactivates PPO.', ch: 4 },
+  { q: 'An egg white turns from clear to opaque and firm in a hot pan. This shows:', o: ['Protein denaturation followed by coagulation', 'Starch gelatinization', 'Hydrogenation', 'Retrogradation'], e: 'Heat disrupts the protein structure; the denatured proteins then congeal.', ch: 4 },
+  { q: 'Whisking egg whites unfolds their proteins. Which cause of denaturation is this?', o: ['Mechanical shear', 'Heat', 'Alcohol', 'Salts'], e: 'Causes: heat, alcohol, acids, salts, enzymes, mechanical shear.', ch: 4 },
+  { q: 'Egg whites whipped into stiff peaks for meringue are an example of a:', o: ['Food foam', 'Emulsion held together by lecithin', 'Gel formed by retrogradation', 'Comminuted product'], e: 'Air dispersed in a liquid or solid.', ch: 4 },
+  { q: 'Oil and lemon juice stay blended in mayonnaise because egg yolk contains:', o: ['Lecithin, a phospholipid emulsifier', 'Cellulose, a fiber', 'Glycogen', 'Lectins'], e: 'A water-loving phosphate head and fat-loving tails bridge oil and water.', ch: 4 },
+  { q: 'An older margarine label lists “partially hydrogenated soybean oil.” The margarine likely contains:', o: ['Trans fats', 'Only omega-3 fatty acids', 'No fat', 'Lectins'], e: 'Partial hydrogenation creates trans fats.', ch: 4 },
+  { q: 'Beef jerky and honey last for months on the shelf without spoiling because they have:', o: ['Low water activity', 'High water activity', 'High total moisture', 'Added lectins'], e: 'Low water activity stops microbial growth (but doesn’t kill pathogens already present).', ch: 4 },
+  { q: 'Iodine is added to table salt to prevent goiter across the population. This is:', o: ['Fortification', 'Enrichment', 'Hydrogenation', 'Comminution'], e: 'Adding nutrients to prevent specific deficiencies in a population.', ch: 4 },
+  { q: 'Thiamin, riboflavin, niacin and iron are added back to white flour after milling removes them. This is:', o: ['Enrichment', 'Fortification', 'Dextrinization', 'Hydrolysis'], e: 'Adding back nutrients lost in processing (1972 flour act).', ch: 4 },
+  { q: 'A cereal maker adds isolated psyllium fiber with a proven cholesterol-lowering benefit. The psyllium is:', o: ['Functional fiber', 'Dietary fiber', 'Glycogen', 'A phytochemical'], e: 'Isolated, extracted or manufactured indigestible carbohydrate with proven physiological benefit.', ch: 4 },
+  { q: 'The fiber found naturally intact in a bowl of whole oats is:', o: ['Dietary fiber', 'Functional fiber', 'Glycogen', 'A lectin'], e: 'Intrinsic and intact in plants = dietary fiber.', ch: 4 },
+  { q: 'Potatoes are cooked, then chilled for potato salad, and some of the starch now resists digestion by human enzymes. This is:', o: ['Resistant starch', 'Glycogen', 'A functional food', 'A lectin'], e: 'Starch humans cannot digest enzymatically.', ch: 4 },
+  { q: 'Several people get sick after eating red kidney beans cooked only on “low” in a slow cooker. The likely cause is:', o: ['Lectins that weren’t destroyed; beans should be soaked, then boiled hard for 10+ minutes', 'Low water activity', 'Too much resistant starch', 'Retrogradation'], e: 'A slow cooker alone does not reliably destroy lectins.', ch: 4 },
+  { q: 'Lycopene, the red pigment in tomatoes, is not an essential nutrient but may help prevent disease. It is a:', o: ['Phytochemical', 'Monosaccharide', 'Lectin', 'Functional fiber'], e: 'Non-nutritive plant chemical that may help prevent disease.', ch: 4 },
+  { q: 'Oatmeal is marketed for its beta-glucan, which lowers cholesterol, a benefit beyond basic nutrition. Oatmeal is being presented as a:', o: ['Functional food', 'Fortified food', 'Comminuted product', 'Retort pouch food'], e: 'Health benefits beyond basic nutrition = functional food.', ch: 4 },
+  { q: 'Sucrose is split into glucose and fructose using a water molecule. This reaction is:', o: ['Hydrolysis', 'Hydrogenation', 'Dextrinization', 'Coagulation'], e: 'Hydro (water) + lysis (splitting).', ch: 4 },
+  { q: 'After slaughter, the carbohydrate stored in muscle is converted to lactic acid. That carbohydrate is:', o: ['Glycogen', 'Cellulose', 'Lactose', 'Resistant starch'], e: 'Glycogen is stored in animal muscle.', ch: 4 },
+  // Ch 6
+  { q: 'A client eats plant foods plus milk and cheese, but no eggs, meat, poultry or fish. This pattern is:', o: ['Lacto-vegetarian', 'Ovo-vegetarian', 'Lacto-ovo vegetarian', 'Pescatarian'], e: 'Lacto = dairy.', ch: 6 },
+  { q: 'A client eats plant foods and eggs, but no dairy or meat. This pattern is:', o: ['Ovo-vegetarian', 'Lacto-vegetarian', 'Vegan', 'Flexitarian'], e: 'Ovo = eggs.', ch: 6 },
+  { q: 'A client eats salmon twice a week plus eggs and yogurt, but no beef, pork or poultry. This pattern is:', o: ['Pescatarian', 'Lacto-ovo vegetarian', 'Flexitarian', 'Macrobiotic'], e: 'No meat except fish; may include eggs or dairy.', ch: 6 },
+  { q: 'A client eats vegetarian meals most days but has chicken at family gatherings a few times a month. This pattern is:', o: ['Flexitarian', 'Pescatarian', 'Lacto-ovo vegetarian', 'Vegan'], e: 'Primarily vegetarian with occasional meat.', ch: 6 },
+  { q: 'A client eats only plant foods and also avoids honey, leather and wool. This pattern is:', o: ['Vegan', 'Lacto-ovo vegetarian', 'Raw food', 'Plant-based'], e: 'Vegan lifestyles exclude all animal-derived products.', ch: 6 },
+  { q: 'A client follows a Japanese-origin, grain-based diet of brown rice and local vegetables, avoiding refined foods and most animal products. This pattern is:', o: ['Macrobiotic', 'Fruitarian', 'Raw food', 'Flexitarian'], e: 'That is the macrobiotic pattern.', ch: 6 },
+  { q: 'A client’s diet consists of fruits, nuts and seeds. This pattern is:', o: ['Fruitarian', 'Macrobiotic', 'Pescatarian', 'Lacto-vegetarian'], e: 'Fruits, nuts, seeds, sometimes legumes.', ch: 6 },
+  { q: 'A client eats mostly uncooked, unprocessed foods such as salads, sprouted seeds and fruit. This pattern is:', o: ['Raw food', 'Macrobiotic', 'Flexitarian', 'Ovo-vegetarian'], e: 'May or may not be fully vegetarian.', ch: 6 },
+  { q: 'A self-described vegetarian lives on white bread, fries, soda, fruit juice and candy. What does the evidence suggest?', o: ['A high uPDI score, linked to higher chronic disease risk', 'Lower disease risk because the diet is meat-free', 'A low uPDI score', 'No effect on chronic disease risk'], e: 'Quality matters: “plant-based” isn’t automatically healthful.', ch: 6 },
+  { q: 'A new vegan client asks which nutrient they most need to plan for. The best answer is:', o: ['Vitamin B12: use fortified foods or a supplement', 'Vitamin C: eat more citrus', 'Fiber: add a supplement', 'Carbohydrate: eat more grains'], e: 'B12 generally can’t be met from food alone on a vegan diet.', ch: 6 },
+  { q: 'Which is NOT a typical reason people choose a vegetarian diet?', o: ['It makes vitamin B12 easier to get', 'Health and chronic disease prevention', 'Environmental sustainability', 'Religious or cultural beliefs'], e: 'Drivers: health, environment, animal welfare and ethics, religion and culture, cost, taste. B12 is actually harder to get on a vegan diet.', ch: 6 },
+  // Ch 7
+  { q: 'A chuck roast comes from a well-exercised shoulder muscle with lots of connective tissue. The best cooking method is:', o: ['Braising (moist heat) to convert collagen to gelatin', 'Grilling over high heat (dry heat)', 'Broiling briefly', 'Pan-frying quickly'], e: 'Lean, well-exercised cuts have more collagen; moist heat makes them tender.', ch: 7 },
+  { q: 'A well-marbled ribeye is best cooked by:', o: ['Grilling or broiling (dry heat); its fat keeps it tender and juicy', 'Stewing for three hours', 'Simmering in water', 'Steaming'], e: 'Marbled cuts rely on intramuscular fat; dry heat also adds Maillard browning.', ch: 7 },
+  { q: 'A package of ground beef is bright red on the surface but purplish-red in the center. Why?', o: ['Oxymyoglobin formed where oxygen reached the surface; myoglobin remains inside', 'The center has turned to metmyoglobin', 'The surface was cured with nitric oxide', 'The center contains more collagen'], e: 'Myoglobin (purplish-red) + oxygen → oxymyoglobin (bright red).', ch: 7 },
+  { q: 'A slice of deli ham is pink even after cooking. The pigment responsible is:', o: ['Nitric oxide myoglobin', 'Oxymyoglobin', 'Metmyoglobin', 'Elastin'], e: 'Nitric oxide myoglobin is the pink pigment of cured meats.', ch: 7 },
+  { q: 'A butcher trims the shiny, silvery membrane off a pork tenderloin because it won’t soften during cooking. That membrane is mostly:', o: ['Elastin', 'Collagen', 'Marbling', 'Myoglobin'], e: 'Elastin resists cooking and must be trimmed.', ch: 7 },
+  { q: 'A cook makes beef stew but pours off and discards the broth. What happens to nutrition?', o: ['50% or more of the water-soluble nutrients can be lost', 'Most of the iron and zinc is lost', 'Nothing; the nutrients stay in the meat', 'Only fat is lost'], e: 'Iron and zinc are retained either way; water-soluble nutrients leach into the liquid.', ch: 7 },
+  { q: 'A rancher pays to have beef rated “USDA Choice.” This is:', o: ['Grading: voluntary, producer-paid, by USDA AMS', 'Inspection: mandatory, taxpayer-funded, by USDA FSIS', 'Seafood HACCP', 'NOAA grading'], e: 'Grading rates quality: tenderness, juiciness, flavor.', ch: 7 },
+  { q: 'A pork processing plant must have federal inspectors confirm its meat is wholesome and safe. This is:', o: ['Inspection: mandatory, by USDA FSIS', 'Grading: voluntary, by USDA AMS', 'NOAA grading', 'A structure/function claim'], e: 'Inspection is mandatory for beef, veal, pork and lamb.', ch: 7 },
+  { q: 'After three hours of slow simmering, a tough pot roast becomes fork-tender. Why?', o: ['Collagen broke down to gelatin under moist heat', 'Elastin melted', 'More marbling formed', 'Myoglobin turned to metmyoglobin'], e: 'Moist heat converts collagen to gelatin.', ch: 7 },
+  { q: 'A steak in the fridge turns brownish-red on the surface after days of air exposure. The pigment is:', o: ['Metmyoglobin', 'Oxymyoglobin', 'Nitric oxide myoglobin', 'Myoglobin'], e: 'Excessive oxygen converts the iron to the ferric state.', ch: 7 },
+  { q: 'Grilling a lean, well-exercised cut like eye of round over high heat often makes it:', o: ['Tough and dry: dry heat causes more moisture loss and toughens lean cuts', 'Very tender, because dry heat converts elastin to gelatin', 'Higher in water-soluble vitamins', 'Pink from nitric oxide myoglobin'], e: 'Lean cuts do better with moist heat.', ch: 7 },
+  // Ch 8
+  { q: 'Imitation crab is made from finely minced fish formed into sticks. It is a:', o: ['Comminuted product', 'Functional fiber', 'Retort pouch', 'Fortified food'], e: 'Comminuted products use animal parts as fillers in processed products (fish sticks, surimi).', ch: 8 },
+  { q: 'Tuna is sold in a shelf-stable, flexible foil package that is free of microorganisms. The package is a:', o: ['Retort pouch', 'Comminuted product', 'HACCP plan', 'Carrier'], e: 'A flexible, aseptic container.', ch: 8 },
+  { q: 'Tilapia raised in managed ponds and sold to grocery stores is a product of:', o: ['Aquaculture', 'Comminution', 'Fortification', 'Hydrogenation'], e: 'Farming of fish and other aquatic species.', ch: 8 },
+  { q: 'A recipe calls for a lean fish. Which should you buy?', o: ['Cod', 'Salmon', 'Mackerel', 'Tuna'], e: 'Lean (under 5 g fat per 3 oz): cod, haddock, tilapia. Salmon, mackerel and tuna are fatty (5–10 g).', ch: 8 },
+  { q: 'A company starts importing shrimp into the U.S. Which program must it follow?', o: ['FDA Seafood HACCP (mandatory)', 'NOAA grading (voluntary)', 'USDA AMS grading', 'No program applies to imports'], e: 'Seafood HACCP is mandatory for domestic processors and importers.', ch: 8 },
+  { q: 'A seafood processor pays NOAA to evaluate and label the quality of its fish. This program is:', o: ['Voluntary, fee-for-service grading', 'Mandatory inspection', 'Seafood HACCP', 'Taxpayer-funded inspection'], e: 'NOAA grading is voluntary.', ch: 8 },
+  { q: 'A cod fillet is done in about 10 minutes, but a beef chuck roast needs hours. Why?', o: ['Fish has short muscle fibers, much less collagen, and connective tissue that denatures easily', 'Fish has more elastin', 'Fish has more marbling', 'Fish has more myoglobin'], e: 'That is why fish cooks faster than beef.', ch: 8 },
+  { q: 'At a processing plant, fish trimmings are finely diced by machine. This step is called:', o: ['Comminution', 'Aquaculture', 'Hydrolysis', 'Retrogradation'], e: 'Finely dicing meat during industrial processing.', ch: 8 },
+  // General
+  { q: 'A carton of milk stays shelf-stable until opened because it was heated to 280–300 °F for 2–6 seconds and packaged aseptically. It was processed by:', o: ['UHT processing', 'Hydrogenation', 'Comminution', 'Dextrinization'], e: 'UHT milk: 280–300 °F for 2–6 seconds.', ch: 0, f: 1 }
+];
+
+const EXAM1_FILL = [
+  // From the review guide
+  { q: '____ tests are the most comprehensive and informative sensory tools and require a well-trained panel.', b: [['descriptive', 'descriptive analysis']], ans: 'Descriptive', e: 'Descriptive panelists are highly trained to identify and quantify specific sensory characteristics.', ch: 3, g: 1 },
+  { q: '____ is the gradual decrease in the ability to distinguish odors over time.', b: [['adaptation']], ans: 'Adaptation', ch: 3, g: 1 },
+  { q: '____ is the combined senses of taste, aroma and mouthfeel.', b: [['flavor', 'flavour']], ans: 'Flavor', ch: 3, g: 1 },
+  { q: '____ evaluation relies on quantifiable results from laboratory instruments.', b: [['objective']], ans: 'Objective', e: 'Its two types are physical tests and chemical tests.', ch: 3, g: 1 },
+  { q: 'The five basic tastes are ____, ____, ____, ____ and ____.', any: 1, b: [['sweet'], ['salty', 'salt'], ['sour'], ['bitter'], ['umami', 'savory', 'savoury']], ans: 'Sweet, salty, sour, bitter, umami', e: 'Sources: sweet (sugars), salty (sodium chloride), sour (acids such as citrus), bitter (caffeine, alkaloids, dark greens), umami (glutamate: meat, mushrooms, soy sauce, cheese).', ch: 3, g: 1 },
+  { q: 'Risk rises from 2 to 4 cases per 10,000. The relative risk is ____, and the absolute increase is ____ extra cases per 10,000.', b: [['2', '2.0', '2x', 'two', 'double'], ['2', 'two']], ans: '2.0; 2 extra cases per 10,000', e: 'Relative risk = 4 ÷ 2 = 2.0. Absolute difference = 4 − 2 = 2 per 10,000.', ch: 2, g: 1 },
+  { q: '“Calcium supports strong bones” is a ____ claim. “Good source of fiber” is a ____ claim.', b: [['structure/function', 'structure function', 'structure and function'], ['nutrient content', 'nutrient']], ans: 'Structure/function; nutrient content', ch: 2, g: 1 },
+  { q: 'Sackett’s three pillars of evidence-based practice: ____, ____ and ____.', any: 1, b: [['evidence', 'research'], ['expertise', 'experience', 'clinical judgment', 'professional judgment'], ['values', 'context', 'preference', 'client', 'patient']], ans: 'Best external evidence, professional expertise, client values and context', ch: 2, g: 1 },
+  { q: 'The nutrition credential that is protected and verifiable is the ____.', b: [['rdn', 'rd', 'registered dietitian', 'registered dietician']], ans: 'RDN', e: '“Nutritionist” is unregulated in many states.', ch: 2, g: 1 },
+  { q: 'The three monosaccharides are ____, ____ and ____.', any: 1, b: [['glucose'], ['fructose'], ['galactose']], ans: 'Glucose, fructose, galactose', e: 'Glucose is the one that circulates in the blood.', ch: 4, g: 1 },
+  { q: 'Carbohydrates are classified as ____, ____, ____ and ____.', any: 1, b: [['monosaccharides', 'mono'], ['disaccharides', 'di'], ['oligosaccharides', 'oligo'], ['polysaccharides', 'poly']], ans: 'Monosaccharides, disaccharides, oligosaccharides, polysaccharides', ch: 4, g: 1 },
+  { q: 'Starch has ____ bonds; cellulose has ____ bonds, which humans lack the enzyme to break.', b: [['alpha', 'a'], ['beta', 'b']], ans: 'Alpha; beta', ch: 4, g: 1 },
+  { q: 'The two essential fatty acids are ____ (omega-3) and ____ (omega-6).', b: [['alpha linolenic', 'alpha linolenic acid', 'ala', 'linolenic'], ['linoleic', 'linoleic acid', 'la']], ans: 'Alpha-linolenic acid (ALA); linoleic acid', ch: 4, g: 1 },
+  { q: 'Lecithin in egg yolk is a ____ that acts as an ____, keeping mayonnaise stable.', b: [['phospholipid'], ['emulsifier', 'emulsifying agent']], ans: 'Phospholipid; emulsifier', ch: 4, g: 1 },
+  { q: 'On a vegan diet, ____ generally cannot be met from food alone.', b: [['b12', 'b 12', 'vitamin b12', 'vitamin b 12', 'cobalamin']], ans: 'Vitamin B12', e: 'Use fortified foods or supplements.', ch: 6, g: 1 },
+  { q: 'A lean fish has under ____ g total fat per 3-oz serving.', b: [['5', 'five']], ans: '5', ch: 8, g: 1, f: 1 },
+  { q: 'A steak left in air turns brownish-red because of ____.', b: [['metmyoglobin', 'met myoglobin']], ans: 'Metmyoglobin', e: 'Excessive oxygen converts the iron to the ferric state.', ch: 7, g: 1 },
+  // Key facts and figures
+  { q: 'Richardson et al. (2023): ____ of 9 planetary boundaries have been transgressed.', b: [['6', 'six']], ans: '6', ch: 1, f: 1 },
+  { q: 'About ____% of global food waste comes from households (UNEP 2024).', b: [['60', 'sixty']], ans: '~60%', e: 'Food service ~28%, retail ~12%.', ch: 1, f: 1 },
+  { q: 'About ____ billion tons of food is wasted globally, roughly one-____ of available food.', b: [['1.05', '1'], ['fifth', '5th']], ans: '~1.05 billion tons; one-fifth', ch: 1, f: 1 },
+  { q: 'U.S. household food insecurity was 10.2% in 2021, ____% in 2022 and ____% in 2024.', b: [['12.8'], ['13.7']], ans: '12.8%; 13.7%', ch: 1, f: 1 },
+  { q: 'The Hunger Vital Sign is a ____-item food insecurity screening tool.', b: [['2', 'two']], ans: '2', e: 'Best practice: universal screening plus a closed-loop referral.', ch: 1, f: 1 },
+  { q: 'The guessing probability is ____ for a triangle test and ____ for a duo-trio test.', b: [['1/3', 'one third', '1 in 3', '33', '0.33'], ['1/2', 'one half', 'half', '1 in 2', '50', '0.5']], ans: '1/3; 1/2', ch: 3, f: 1 },
+  { q: 'Aroma contributes about ____% of flavor.', b: [['75', 'seventy five', 'three quarters', '3/4']], ans: '~75%', ch: 3, f: 1 },
+  { q: 'Carbohydrates provide ____ kcal per gram.', b: [['4', 'four']], ans: '4', ch: 4, f: 1 },
+  { q: 'Starch gelatinization occurs at roughly ____ to ____ °C.', b: [['60'], ['85']], ans: '60–85 °C', ch: 4, f: 1 },
+  { q: 'The Flour Enrichment Act of ____ added thiamin, riboflavin, niacin and ____.', b: [['1972'], ['iron']], ans: '1972; iron', ch: 4, f: 1 },
+  { q: 'UHT milk is processed at ____–____ °F for 2–6 seconds.', b: [['280'], ['300']], ans: '280–300 °F', ch: 0, f: 1 },
+  { q: 'If meat cooking liquid is discarded, ____% or more of water-soluble nutrients can be lost.', b: [['50', 'fifty']], ans: '50%', e: 'B-vitamin loss is about 15% greater without drippings.', ch: 7, f: 1 },
+  // Concepts
+  { q: 'Partial hydrogenation creates ____ fats; complete hydrogenation yields ____ fat.', b: [['trans'], ['saturated']], ans: 'Trans; saturated', ch: 4 },
+  { q: 'Polyphenol oxidase causes ____ browning, and ____ inactivates it.', b: [['enzymatic', 'enzymic'], ['blanching', 'blanch', 'heat', 'heating']], ans: 'Enzymatic; blanching', ch: 4 },
+  { q: 'Raw kidney beans contain ____; soak them, then boil hard for at least ____ minutes.', b: [['lectins', 'lectin'], ['10', 'ten']], ans: 'Lectins; 10', ch: 4 },
+  { q: 'Low water activity stops microbial ____ but does not ____ pathogens.', b: [['growth', 'grow', 'reproduction'], ['kill', 'destroy', 'eliminate']], ans: 'Growth; kill', ch: 4 },
+  { q: 'Under moist heat, ____ breaks down to gelatin, while ____ resists cooking and must be trimmed.', b: [['collagen'], ['elastin']], ans: 'Collagen; elastin', ch: 7 },
+  { q: 'Meat grading is done by USDA ____; mandatory inspection is done by USDA ____.', b: [['ams', 'agricultural marketing service'], ['fsis', 'food safety and inspection service']], ans: 'AMS; FSIS', ch: 7 },
+  { q: 'The bright red pigment that forms when myoglobin contacts oxygen is ____.', b: [['oxymyoglobin']], ans: 'Oxymyoglobin', ch: 7 },
+  { q: 'Cured meats are pink because of ____.', b: [['nitric oxide myoglobin', 'nitrosylmyoglobin', 'nitrosomyoglobin']], ans: 'Nitric oxide myoglobin', ch: 7 },
+  { q: 'FDA’s Seafood ____ rule is mandatory, while ____ seafood grading is voluntary.', b: [['haccp'], ['noaa']], ans: 'HACCP; NOAA', ch: 8 }
+];
+
+const EXAM1_SHORT = [
+  {
+    q: 'Define objective evaluation and give its two types. Discuss the difference between descriptive and affective sensory tests, with examples.', ch: 3, g: 1,
+    pts: [
+      'Objective evaluation = food quality measured with quantifiable results from laboratory instruments',
+      'Physical tests: volume, moisture, color, viscosity, texture, sugar concentration (refractometer); e.g., checking a new formulation matches the old one’s color or texture',
+      'Chemical tests: pH, sugars, saltiness, flavor, nutrients (pH meter, Benedict/Fehling, atomic absorption spectroscopy); e.g., developing nutrition information',
+      'Descriptive (analytical) tests identify and quantify specific sensory characteristics using a well-trained panel',
+      'Descriptive examples: flavor profile analysis, quantitative descriptive analysis, texture profile analysis, sensory spectrometry',
+      'Affective tests determine acceptability or preference using consumers',
+      'Affective examples: paired preference, ranking, 9-point hedonic scale',
+      'Don’t swap panels: untrained consumers shouldn’t judge technical attributes; trained panelists shouldn’t be asked if they like a product (training makes them unrepresentative)'
+    ],
+    ans: [
+      'Objective evaluation is evaluation of food quality that relies on quantifiable results measured by laboratory instruments. Physical tests measure volume, moisture, color, viscosity, texture and sugar concentration; they may be used to check that a new formulation matches the old one’s color or texture. Chemical tests measure pH, sugars, saltiness, flavor and nutrients; they may be used to develop a product’s nutrition information.',
+      'Descriptive (analytical) tests identify and quantify specific sensory characteristics using a well-trained panel: flavor profile analysis, quantitative descriptive analysis, texture profile analysis, sensory spectrometry. Affective tests determine acceptability or preference using consumers: paired preference, ranking, 9-point hedonic scale. Consumers should not be asked to detect technical attributes because they are untrained; trained panelists should not be asked if they like a product because training makes them unrepresentative of consumers.'
+    ]
+  },
+  {
+    q: 'Discuss the variations of vegetarian diets and the driving factors behind choosing one.', ch: 6, g: 1,
+    pts: [
+      'Name the patterns: vegan, lacto, ovo, lacto-ovo, pescatarian, flexitarian, fruitarian, macrobiotic, raw food (and plant-based)',
+      'Say what each includes or excludes (e.g., lacto = dairy, ovo = eggs, pescatarian = fish but no other meat, flexitarian = occasional meat)',
+      'Driver: health and chronic disease prevention',
+      'Drivers: environmental sustainability, animal welfare and ethics',
+      'Drivers: religious or cultural beliefs, cost, taste',
+      'Vitamin B12 needs supplements or fortified foods in a vegan pattern (Academy 2025 position paper)',
+      '“Plant-based” isn’t automatically healthful: refined grains, fries, sweets and sugary drinks score high on the uPDI, linked to higher chronic disease risk; quality matters'
+    ],
+    ans: [
+      'Patterns include vegan, lacto, ovo, lacto-ovo, pescatarian, flexitarian, fruitarian, macrobiotic and raw food (see Key terms, Ch 6). Drivers include health and chronic disease prevention, environmental sustainability, animal welfare and ethics, religious or cultural beliefs, cost and taste.',
+      'The Academy’s 2025 position paper identifies vitamin B12 as the nutrient that requires supplements or fortified foods in a vegan pattern. “Plant-based” is not automatically healthful: a diet of refined grains, fries, sweets and sugary drinks scores high on the unhealthful plant-based diet index (uPDI), linked to higher chronic disease risk. Quality of plant foods matters.'
+    ]
+  },
+  {
+    q: 'Why should leaner cuts of meat be cooked with moist heat and well-marbled cuts with dry heat? What are the advantages and disadvantages of each, and how does each affect nutritional value?', ch: 7, g: 1,
+    pts: [
+      'Lean, well-exercised cuts contain more collagen',
+      'Moist heat (braising, stewing, simmering, steaming) converts collagen to gelatin',
+      'Moist heat advantages: lower temperatures, less fluid loss, slower and more controlled, so lean cuts end up juicy and tender',
+      'Moist heat disadvantages: longer cooking; nutrients leach into the liquid',
+      'Well-marbled cuts rely on intramuscular fat for texture and flavor, so dry heat (broiling, grilling, roasting, frying) works well',
+      'Dry heat advantage: Maillard browning adds flavor',
+      'Dry heat disadvantages: more moisture loss; toughens lean cuts',
+      'Nutrition depends on whether drippings or liquid are eaten: discarding it can lose 50%+ of water-soluble nutrients; B-vitamin loss ~15% greater without drippings',
+      'Almost all iron and zinc are retained either way'
+    ],
+    ans: [
+      'Lean, well-exercised cuts contain more collagen. Moist heat (braising, stewing, simmering, steaming) converts collagen to gelatin, reaches lower temperatures than dry heat, causes less fluid loss and is slower and more controlled, making lean cuts juicy and tender. Its drawbacks are longer cooking and nutrients leaching into the liquid. Well-marbled cuts rely on intramuscular fat for texture and flavor, so dry heat (broiling, grilling, roasting, frying) works well and adds Maillard browning; its drawbacks are more moisture loss and toughening of lean cuts.',
+      'Nutritional value depends most on whether drippings or liquid are consumed. If the liquid is discarded, 50% or more of water-soluble nutrients can be lost, and B-vitamin loss is about 15% greater without drippings. Almost all iron and zinc are retained either way.'
+    ]
+  },
+  {
+    q: 'Define the three types of food label claims.', ch: 2, g: 1,
+    pts: [
+      'Health claim: links a nutrient or substance to a disease or health condition',
+      'Health claims are reviewed and approved by FDA',
+      'Nutrient content claim: describes the level of a nutrient',
+      'Nutrient content examples: “good source of fiber,” “high in calcium,” “contains 100 calories”',
+      'Structure/function claim: describes a nutrient’s role in body structure or function, e.g., “calcium supports strong bones”',
+      'Structure/function claims need no FDA approval but require a disclaimer'
+    ],
+    ans: [
+      'Health claim: links a nutrient or substance to a disease or health condition; reviewed and approved by FDA. Nutrient content claim: describes the level of a nutrient (“good source of fiber,” “high in calcium,” “contains 100 calories”). Structure/function claim: describes a nutrient’s role in body structure or function (“calcium supports strong bones”); no FDA approval but requires a disclaimer.'
+    ]
+  },
+  {
+    q: 'Describe the difference between peer-reviewed and popular press articles.', ch: 2, g: 1,
+    pts: [
+      'Peer-reviewed articles are the gold standard: academic peers assess whether the work is significant, the methods appropriate and the results correctly interpreted',
+      'They communicate scholarly data and are found in journals and databases such as PubMed',
+      'Peer review is a quality filter, not a guarantee; findings are regularly overturned',
+      'Popular press articles are written by journalists for the public',
+      'They summarize findings and headlines',
+      'They appear in magazines, books and newspapers'
+    ],
+    ans: [
+      'Peer-reviewed articles are the gold standard: academic peers assess whether the work is significant, the methods appropriate and the results correctly interpreted. They communicate scholarly data and are found in journals and databases such as PubMed. Peer review is a quality filter, not a guarantee. Popular press articles are written by journalists for the public, summarize findings and headlines, and appear in magazines, books and newspapers.'
+    ]
+  },
+  {
+    q: 'Define water activity and explain why it has one of the most significant impacts on shelf life.', ch: 4, g: 1,
+    pts: [
+      'Water activity = how available a food’s water is to microbes',
+      'It is not the same as total moisture',
+      'Salt and sugar bind water and lower water activity',
+      'Fresh foods have high water activity and spoil quickly',
+      'Preservation lowers water activity (dehydration, freezing, salting, adding sugar), extending shelf life',
+      'Low water activity stops microbial growth but does not kill pathogens already present'
+    ],
+    ans: [
+      'Water activity is how available a food’s water is to microbes, not its total moisture; salt and sugar bind water and lower it. Fresh foods have high water activity and spoil quickly. Preservation lowers water activity by dehydration, freezing, salting or adding sugar. Low water activity stops microbial growth but does not kill pathogens already present.'
+    ]
+  },
+  {
+    q: 'Discuss digestible and indigestible carbohydrates and their effect on the sensory experience of foods.', ch: 4, g: 1,
+    pts: [
+      'Digestible carbohydrates are broken down by human enzymes',
+      'They sweeten foods',
+      'They retain water, keeping foods moist (e.g., corn syrup)',
+      'They brown through the Maillard reaction for toasted flavor',
+      'Indigestible carbohydrates (fiber, cellulose, resistant starch) are not broken down by human enzymes',
+      'Starches can thicken and form gels',
+      'Dietary fiber adds crunchy or chewy texture',
+      'Both types contribute color and flavor'
+    ],
+    ans: [
+      'Digestible carbohydrates are broken down by human enzymes; they sweeten, retain water (corn syrup) and brown through the Maillard reaction for toasted flavor. Indigestible carbohydrates (fiber, cellulose, resistant starch) are not broken down by human enzymes; starches can thicken and form gels, and dietary fiber adds crunchy or chewy texture. Both contribute color and flavor.'
+    ]
+  },
+  {
+    q: 'Define protein denaturation and list its causes. Then distinguish enzymatic from non-enzymatic browning.', ch: 4, g: 1,
+    pts: [
+      'Denaturation = disruption of the bonds that make up a protein’s secondary and tertiary structure',
+      'Causes: heat, alcohol, acids, salts, enzymes, mechanical shear',
+      'Enzymatic browning: polyphenol oxidase (PPO) oxidizes phenols into brown melanin',
+      'Enzymatic example: a sliced apple browning',
+      'Non-enzymatic browning is the most common type and happens at high temperatures',
+      'Maillard reaction: reducing sugars + amino groups (bread crust, seared meat)',
+      'Caramelization: heating sugar'
+    ],
+    ans: [
+      'Denaturation is disruption of the bonds that make up a protein’s secondary and tertiary structure. Causes: heat, alcohol, acids, salts, enzymes and mechanical shear.',
+      'Enzymatic browning: polyphenol oxidase oxidizes phenols into brown melanin (a sliced apple browning). Non-enzymatic browning is the most common type and occurs at high temperatures: Maillard (bread crust, seared meat) and caramelization (heating sugar).'
+    ]
+  },
+  {
+    q: 'What is the difference between grading and safety inspection of meat?', ch: 7, g: 1,
+    pts: [
+      'Grading is voluntary',
+      'Grading is done by the USDA Agricultural Marketing Service (AMS) at the producer’s expense',
+      'Grading assesses quality: tenderness, juiciness, flavor',
+      'Inspection is mandatory for beef, veal, pork and lamb',
+      'Inspection is carried out by USDA FSIS with taxpayer funds',
+      'Inspection ensures meat is wholesome and safe',
+      'Meat sold within one state may be inspected by state programs monitored by FSIS',
+      'Seafood: FDA Seafood HACCP is mandatory; NOAA grading is voluntary'
+    ],
+    ans: [
+      'Grading is voluntary, done by the USDA Agricultural Marketing Service at the producer’s expense, and assesses quality (tenderness, juiciness, flavor). Inspection is mandated for beef, veal, pork and lamb, carried out by USDA FSIS with taxpayer funds, and ensures meat is wholesome and safe. Meat sold within one state may be inspected by state programs monitored by FSIS. For seafood, FDA’s Seafood HACCP rule is mandatory, while NOAA grading is voluntary.'
+    ]
+  },
+  {
+    q: 'What compounds contribute to the color of meat and under what circumstances?', ch: 7, g: 1,
+    pts: [
+      'Myoglobin: the primary pigment, purplish-red inside the meat',
+      'Oxymyoglobin: bright red, forms on contact with oxygen',
+      'Metmyoglobin: brownish-red, forms with excessive oxygen exposure',
+      'Metmyoglobin forms as the iron converts to the ferric state',
+      'Nitric oxide myoglobin: the pink color of cured meats'
+    ],
+    ans: [
+      'Myoglobin is the primary pigment (purplish-red inside the meat). Oxymyoglobin forms on contact with oxygen (bright red). Metmyoglobin forms with excessive oxygen exposure as iron converts to the ferric state (brownish-red). Nitric oxide myoglobin gives cured meats their pink color.'
+    ]
+  }
+];
+
+const EXAM1 = {
+  id: 'exam1',
+  name: 'Exam 1',
+  chapters: [1, 2, 3, 4, 6, 7, 8],
+  chapterSpan: 'Ch 1–4, 6–8',
+  note: 'Covers every part of the Exam 1 study guide except the presentation article essay. True/false and fill-in also mix in auto-generated key-term questions.',
+  terms: EXAM1_TERMS.map(([t, d, ch, al]) => ({ t, d, ch, al })),
+  avoid: EXAM1_AVOID,
+  tf: EXAM1_TF,
+  mc: EXAM1_MC,
+  scen: EXAM1_SCEN,
+  fill: EXAM1_FILL,
+  short: EXAM1_SHORT
+};
+
+/* Exam 2: to be updated.
+   Fill in the same fields as EXAM1 (chapters, chapterSpan, terms, avoid, tf, mc,
+   scen, fill, short), add any new chapter names to CHAPTERS above, then delete
+   `pending: true`. The home screen will show Exam 2 with its own mode buttons. */
+const EXAM2 = {
+  id: 'exam2',
+  name: 'Exam 2',
+  pending: true
+};
+
+const EXAMS = [EXAM1, EXAM2];
+
+/* =====================================================================
+   APP
+   ===================================================================== */
+const AUTO_N = 12;            // auto-generated key-term questions added to T/F and fill-in
+const LETTERS = 'ABCDEFGH';
+const TYPES = [
+  { id: 'match', name: 'Key-term matching', sub: 'Sets of 4, reshuffled every round. Covers every term in scope.' },
+  { id: 'tf', name: 'True / false', sub: 'Review-guide statements, facts and key-term definitions' },
+  { id: 'mc', name: 'Multiple choice', sub: 'Review questions, concepts, facts and figures' },
+  { id: 'scen', name: 'Scenarios', sub: 'Apply a key term to a real situation' },
+  { id: 'fill', name: 'Fill in the blank', sub: 'Type the answer. Spelling is checked loosely.' },
+  { id: 'short', name: 'Short answer', sub: '10 points each, with key points to include' }
+];
+const TYPE_NAME = { match: 'Key-term matching', tf: 'True / false', mc: 'Multiple choice', scen: 'Scenarios', fill: 'Fill in the blank', short: 'Short answer', exam: 'Full practice exam' };
+const MODE_NAME = { answer: 'Mode 1 · Answer mode', sim: 'Mode 2 · Simulation mode' };
+
+const S = {
+  examId: 'exam1',
+  mode: 'sim',
+  view: 'home',
+  filt: { ch: 'all', n: 'all', guide: false, auto: true },
+  quiz: null
+};
+
+const app = document.getElementById('app');
+const exam = () => EXAMS.find(e => e.id === S.examId);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const chName = c => c === 0 ? 'Key facts' : `Ch ${c} · ${CHAPTERS[c]}`;
+const fmtPts = n => (Math.round(n * 10) / 10).toString();
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- answer checking ---------- */
+function norm(s) {
+  return String(s).toLowerCase()
+    .replace(/α/g, ' alpha ').replace(/β/g, ' beta ')
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/(\d),(?=\d{3})/g, '$1')
+    .replace(/[^a-z0-9./ ]+/g, ' ')
+    .replace(/\.(?!\d)/g, ' ').replace(/(^|[^0-9])\./g, '$1 ')
+    .split(/\s+/).filter(w => /[a-z0-9]/.test(w))
+    .map(w => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) ? w.slice(0, -1) : w)
+    .join(' ');
+}
+const NEG = new Set(['non', 'not', 'no', 'un']);
+function matchBlank(input, accepted) {
+  const x = norm(input);
+  if (!x) return false;
+  const xw = ` ${x} `;
+  return accepted.some(a => {
+    const y = norm(a);
+    if (!y) return false;
+    if (x === y) return true;
+    if (!xw.includes(` ${y} `)) return false;
+    const yw = new Set(y.split(' '));
+    return !x.split(' ').some(w => NEG.has(w) && !yw.has(w));
+  });
+}
+const FILLER = new Set(['the', 'a', 'an', 'test', 'study', 'claim', 'design', 'article', 'cooking', 'reaction', 'method', 'trial', 'survey', 'of', 'and', 'vs', 'v', 'diet', 'index']);
+const core = s => norm(s).split(' ').filter(w => !FILLER.has(w)).join(' ');
+function matchTerm(input, term) {
+  const x = core(input);
+  if (!x) return false;
+  return [term.t].concat(term.al || []).some(a => core(a) === x);
+}
+
+/* ---------- building question pools ---------- */
+function inScope(x) {
+  const f = S.filt;
+  if (f.guide && !x.g) return false;
+  if (f.ch === 'all') return true;
+  if (f.ch === 'facts') return !!x.f;
+  return String(x.ch) === f.ch;
+}
+function termScope() {
+  const E = exam(), c = S.filt.ch;
+  return (c === 'all' || c === 'facts') ? E.terms : E.terms.filter(t => String(t.ch) === c);
+}
+const autoOn = () => S.filt.auto && !S.filt.guide && S.filt.ch !== 'facts';
+function avoidPair(a, b) {
+  return (exam().avoid || []).some(([x, y]) => (x === a.t && y === b.t) || (x === b.t && y === a.t));
+}
+function autoTF(terms, n) {
+  const all = exam().terms;
+  return shuffle(terms).slice(0, n).map(t => {
+    if (Math.random() < 0.5) return { kt: 1, auto: 1, ch: t.ch, term: t.t, def: t.d, a: true, e: `${esc(t.t)}: ${esc(t.d)}.` };
+    let others = all.filter(o => o !== t && o.ch === t.ch && !avoidPair(t, o));
+    if (!others.length) others = all.filter(o => o !== t && !avoidPair(t, o));
+    const o = pick(others);
+    return { kt: 1, auto: 1, ch: t.ch, term: t.t, def: o.d, a: false, e: `That definition describes <b>${esc(o.t)}</b>. ${esc(t.t)}: ${esc(t.d)}.` };
+  });
+}
+function autoRecall(terms, n) {
+  return shuffle(terms).slice(0, n).map(t => ({ auto: 1, recall: 1, ch: t.ch, term: t, def: t.d, b: [[t.t]], ans: t.t, e: '' }));
+}
+function pool(cat) {
+  const E = exam();
+  let base = (E[cat] || []).filter(inScope).map(src => ({ cat, src }));
+  if (cat === 'tf' && autoOn()) base = base.concat(autoTF(termScope(), AUTO_N).map(src => ({ cat, src })));
+  if (cat === 'fill' && autoOn()) base = base.concat(autoRecall(termScope(), AUTO_N).map(src => ({ cat, src })));
+  return base;
+}
+function poolCount(cat) {
+  const E = exam();
+  if (cat === 'match') return termScope().length;
+  let n = (E[cat] || []).filter(inScope).length;
+  if ((cat === 'tf' || cat === 'fill') && autoOn()) n += Math.min(AUTO_N, termScope().length);
+  return n;
+}
+function matchSets(terms) {
+  const sh = shuffle(terms), sets = [];
+  for (let i = 0; i < sh.length; i += 4) {
+    let set = sh.slice(i, i + 4);
+    if (set.length < 4) set = set.concat(shuffle(terms.filter(t => !set.includes(t))).slice(0, 4 - set.length));
+    sets.push({ terms: set });
+  }
+  return sets;
+}
+function buildExam() {
+  const E = exam(), take = (a, n) => shuffle(a || []).slice(0, n);
+  return [].concat(
+    matchSets(E.terms).slice(0, 2).map(src => ({ cat: 'match', src, sec: 'Part A · Matching' })),
+    take(E.tf, 10).map(src => ({ cat: 'tf', src, sec: 'Part B · True / false' })),
+    take((E.mc || []).map(src => ({ cat: 'mc', src })).concat((E.scen || []).map(src => ({ cat: 'scen', src }))), 10).map(x => Object.assign(x, { sec: 'Part C · Multiple choice' })),
+    take(E.fill, 5).map(src => ({ cat: 'fill', src, sec: 'Part D · Fill in the blank' })),
+    take(E.short, 3).map(src => ({ cat: 'short', src, sec: 'Part E · Short answer' }))
+  );
+}
+function prep(en) {
+  const it = { cat: en.cat, src: en.src, sec: en.sec, kind: en.cat === 'scen' ? 'mc' : en.cat, resp: null, done: false, pts: 0, max: 1 };
+  const s = en.src;
+  if (it.kind === 'mc') {
+    let ord = s.o.map((_, i) => i);
+    if (!s.keep) ord = shuffle(ord);
+    it.opts = ord.map(i => s.o[i]);
+    it.ans = ord.indexOf(s.a || 0);
+  } else if (it.kind === 'fill') {
+    it.resp = s.b.map(() => '');
+  } else if (it.kind === 'match') {
+    it.terms = shuffle(s.terms);
+    it.defs = shuffle([0, 1, 2, 3]);
+    it.resp = [null, null, null, null];
+    it.max = 4;
+  } else if (it.kind === 'short') {
+    it.resp = '';
+    it.chk = s.pts.map(() => false);
+    it.max = 10;
+  }
+  if (S.mode === 'answer') it.done = true;
+  return it;
+}
+function startQuiz(type) {
+  let entries;
+  if (type === 'match') entries = matchSets(termScope()).map(src => ({ cat: 'match', src }));
+  else if (type === 'exam') entries = buildExam();
+  else {
+    entries = shuffle(pool(type));
+    if (S.filt.n !== 'all') entries = entries.slice(0, +S.filt.n);
+  }
+  if (!entries.length) return;
+  launch(type, entries, false);
+}
+function launch(type, entries, retry) {
+  S.quiz = { type, retry, mode: S.mode, items: entries.map(prep), i: 0 };
+  S.view = 'quiz';
+  render(true);
+}
+const cur = () => S.quiz.items[S.quiz.i];
+
+/* ---------- grading actions ---------- */
+function choose(v) {
+  const it = cur();
+  if (it.done) return;
+  it.resp = v;
+  it.done = true;
+  it.pts = (it.kind === 'tf' ? v === it.src.a : v === it.ans) ? 1 : 0;
+  render();
+  focusPrimary();
+  revealScroll();
+}
+function check() {
+  const it = cur();
+  if (it.done) return;
+  if (it.kind === 'fill') {
+    const s = it.src;
+    let res;
+    if (s.recall) res = [matchTerm(it.resp[0], s.term)];
+    else if (s.any) {
+      const used = new Set();
+      res = it.resp.map(r => {
+        const k = s.b.findIndex((acc, bi) => !used.has(bi) && matchBlank(r, acc));
+        if (k >= 0) { used.add(k); return true; }
+        return false;
+      });
+    } else res = it.resp.map((r, bi) => matchBlank(r, s.b[bi]));
+    it.res = res;
+    it.pts = res.filter(Boolean).length / res.length;
+  } else if (it.kind === 'match') {
+    it.pts = it.resp.filter((t, r) => t === it.defs[r]).length;
+  } else if (it.kind === 'short') {
+    it.pts = 0;
+  }
+  it.done = true;
+  render();
+  if (it.kind !== 'short') focusPrimary();
+  revealScroll();
+}
+function focusPrimary() {
+  const b = app.querySelector('[data-fk="primary"]');
+  if (b) b.focus({ preventScroll: true });
+}
+function go(d) {
+  const q = S.quiz, j = q.i + d;
+  if (j < 0) return;
+  if (j >= q.items.length) { S.view = 'results'; render(true); return; }
+  q.i = j;
+  render(true);
+}
+function primary() {
+  const it = cur();
+  if (!it.done && (it.kind === 'fill' || it.kind === 'match' || it.kind === 'short')) check();
+  else go(1);
+}
+function revealScroll() {
+  const fb = document.getElementById('fb');
+  if (fb && fb.getBoundingClientRect().bottom > window.innerHeight - 90) {
+    const tall = fb.offsetHeight > window.innerHeight * 0.55;
+    fb.scrollIntoView({ block: tall ? 'start' : 'nearest', behavior: reduceMotion() ? 'auto' : 'smooth' });
+  }
+}
+function leaveQuiz(to) {
+  const q = S.quiz;
+  const touched = q && q.mode === 'sim' && S.view === 'quiz' && q.items.some(i => i.done);
+  if (touched && !confirm('Leave this round? Your answers so far will not be saved.')) return;
+  S.view = to;
+  render(true);
+}
+
+/* ---------- views ---------- */
+function examPanel(E) {
+  const row = (k, v) => `<div class="nf-row"><span>${k}</span><span class="v">${v}</span></div>`;
+  if (E.pending) {
+    return `
+    <section class="nf pending" aria-labelledby="${E.id}h">
+      <h2 class="nf-title" id="${E.id}h">Exam Facts</h2>
+      <p class="nf-sub"><b>${esc(E.name)}</b></p>
+      <div class="nf-serv"><span>Serving size</span><span>—</span></div>
+      <hr class="nf-bar">
+      <p class="pending-note">To be updated.</p>
+      <hr class="nf-bar mid">
+      ${row('Key terms', '—')}${row('Questions', '—')}
+      <hr class="nf-bar">
+    </section>`;
+  }
+  const c = { terms: E.terms.length, tf: E.tf.length, mc: E.mc.length, scen: E.scen.length, fill: E.fill.length, short: E.short.length };
+  const total = Object.values(c).reduce((a, b) => a + b, 0);
+  return `
+    <section class="nf" aria-labelledby="${E.id}h">
+      <h2 class="nf-title" id="${E.id}h">Exam Facts</h2>
+      <p class="nf-sub"><b>${esc(E.name)}</b> · Food science</p>
+      <div class="nf-serv"><span>Serving size</span><span>1 exam (${esc(E.chapterSpan)})</span></div>
+      <hr class="nf-bar">
+      <div class="nf-big"><span class="k"><small>Amount per exam</small>Practice items</span><span class="v">${total}</span></div>
+      <hr class="nf-bar mid">
+      <div class="nf-head"><span></span><span>Items</span></div>
+      ${row('<b>Key terms</b> for matching', c.terms)}
+      ${row('<b>True / false</b>', c.tf)}
+      ${row('<b>Multiple choice</b>', c.mc)}
+      ${row('<b>Scenarios</b>', c.scen)}
+      ${row('<b>Fill in the blank</b>', c.fill)}
+      ${row('<b>Short answer</b>', c.short)}
+      <hr class="nf-bar">
+      <button class="mode-btn" data-act="start-mode" data-exam="${E.id}" data-mode="answer">
+        <span class="k">Start mode 1</span><span class="t">Answer mode</span><span class="d">Answers show right away. Study as you go.</span>
+      </button>
+      <button class="mode-btn" data-act="start-mode" data-exam="${E.id}" data-mode="sim">
+        <span class="k">Start mode 2</span><span class="t">Simulation mode</span><span class="d">Answer each question, then see if you were right.</span>
+      </button>
+      ${E.note ? `<p class="nf-foot">* ${E.note}</p>` : ''}
+    </section>`;
+}
+function vHome() {
+  return `
+  <h1 class="sr">Food Science Exam Simulator</h1>
+  <p class="intro">Practice for the food science exam on your phone or computer. Nothing to install and no sign-in: your answers stay in this browser tab.</p>
+  <div class="home-grid">${EXAMS.map(examPanel).join('')}</div>`;
+}
+
+function vTypes() {
+  const E = exam(), f = S.filt, sim = S.mode === 'sim';
+  const chOpts = [['all', 'All chapters'], ['facts', 'Key facts and figures only']].concat(E.chapters.map(c => [String(c), `Ch ${c} · ${CHAPTERS[c]}`]));
+  const nOpts = [['all', 'All'], ['10', '10'], ['20', '20'], ['30', '30']];
+  const opt = (arr, v) => arr.map(([k, l]) => `<option value="${k}"${k === v ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  const rows = TYPES.map(t => {
+    const n = poolCount(t.id);
+    let unit = t.id === 'match' ? 'terms' : 'items';
+    let sub = t.sub;
+    if (t.id === 'tf' || t.id === 'fill') sub = autoOn() ? `${t.sub.split('.')[0]}. Includes ${Math.min(AUTO_N, termScope().length)} random key-term questions.` : t.sub;
+    if (t.id === 'match') sub = `Sets of 4 · ${Math.ceil(n / 4)} sets, reshuffled every round`;
+    const per = (t.id !== 'match' && f.n !== 'all' && n > +f.n) ? `<small>${f.n} per round</small>` : `<small>${unit}</small>`;
+    return `<button class="type-row" data-act="start" data-type="${t.id}"${n ? '' : ' disabled'}>
+      <span class="tr-name"><b>${t.name}</b><small>${n ? esc(sub) : 'None for this filter'}</small></span>
+      <span class="tr-n">${n}${per}</span><span aria-hidden="true">›</span></button>`;
+  }).join('');
+  return `
+  <div class="crumbs">
+    <button class="linkbtn" data-act="home">‹ Exams</button>
+    <button class="linkbtn" data-act="switch-mode">Switch to ${sim ? 'mode 1 · answer' : 'mode 2 · simulation'}</button>
+  </div>
+  <section class="nf">
+    <h1 class="nf-title">Question Types</h1>
+    <p class="nf-sub"><b>${esc(E.name)}</b> · <span class="mode-chip">${MODE_NAME[S.mode]}</span></p>
+    <p class="nf-sub muted">${sim ? 'Answer each question, then the correct answer and explanation appear.' : 'Every answer is shown right away.'}</p>
+    <hr class="nf-bar">
+    <div class="filters">
+      <label class="field">Chapter<select data-filter="ch">${opt(chOpts, f.ch)}</select></label>
+      <label class="field">Questions per round<select data-filter="n">${opt(nOpts, f.n)}</select></label>
+      <label class="chk"><input type="checkbox" data-filter="guide"${f.guide ? ' checked' : ''}> Review-guide questions only</label>
+      <label class="chk"><input type="checkbox" data-filter="auto"${f.auto ? ' checked' : ''}${f.guide ? ' disabled' : ''}> Mix key-term questions into true/false and fill in the blank</label>
+    </div>
+    <hr class="nf-bar mid">
+    <div class="nf-head"><span>Pick a type to start</span><span>Amount</span></div>
+    ${rows}
+    <hr class="nf-bar">
+    <button class="type-row exam" data-act="start" data-type="exam">
+      <span class="tr-name"><b>Full practice exam</b><small>2 matching sets · 10 true/false · 10 multiple choice · 5 fill-in · 3 short answer. All chapters; ignores the filters above.</small></span>
+      <span class="tr-n">30<small>items</small></span><span aria-hidden="true">›</span></button>
+  </section>`;
+}
+
+function eyebrow(it) {
+  const p = [];
+  if (it.sec) p.push(`<span>${esc(it.sec)}</span>`);
+  if (it.kind === 'match') {
+    const chs = Array.from(new Set(it.terms.map(t => t.ch))).sort((a, b) => a - b);
+    p.push(`<span>${chs.map(c => 'Ch ' + c).join(' · ')}</span>`);
+  } else p.push(`<span>${esc(chName(it.src.ch))}</span>`);
+  if (it.src.g) p.push('<span class="tag g">Review guide</span>');
+  if (it.src.f) p.push('<span class="tag">Key fact</span>');
+  if (it.src.auto) p.push('<span class="tag">Key-term check</span>');
+  return `<div class="eyebrow">${p.join('')}</div>`;
+}
+function feedback(it, sim, inner) {
+  let h;
+  if (!sim) h = '<p class="fb-h">Answer</p>';
+  else {
+    const full = it.pts >= it.max, part = it.pts > 0 && !full;
+    h = `<p class="fb-h ${full ? 'ok' : part ? 'part' : 'no'}">${full ? 'Correct' : part ? 'Partly right' : 'Not quite'}</p>`;
+  }
+  return `<div class="fb" id="fb" role="status">${h}${inner}</div>`;
+}
+const optState = (it, v, correct) => it.done ? (v === correct ? 'ok' : (it.resp === v ? 'no' : 'dim')) : (it.resp === v ? 'sel' : '');
+
+function bTF(it, sim) {
+  const s = it.src;
+  const head = s.kt
+    ? `<p class="q-prompt">True or false: this definition matches the term</p><p class="q-text"><span class="kt-term">${esc(s.term)}</span>“${esc(s.def)}”</p>`
+    : `<p class="q-prompt">True or false</p><p class="q-text">${s.q}</p>`;
+  const btn = v => `<button class="opt tf ${optState(it, v, s.a)}" data-act="choose" data-v="${v ? 1 : 0}" data-fk="tf${v ? 1 : 0}"${it.done ? ' aria-disabled="true"' : ''}>${v ? 'True' : 'False'}</button>`;
+  const fb = it.done ? feedback(it, sim, `<p class="fb-a">Answer: <mark>${s.a ? 'True' : 'False'}</mark></p>${s.e ? `<p>${s.e}</p>` : ''}`) : '';
+  return `${head}<div class="tf-row" role="group" aria-label="Your answer">${btn(true)}${btn(false)}</div>${fb}`;
+}
+function bMC(it, sim) {
+  const s = it.src;
+  const opts = it.opts.map((o, i) => `<button class="opt ${optState(it, i, it.ans)}" data-act="choose" data-v="${i}" data-fk="o${i}"${it.done ? ' aria-disabled="true"' : ''}><span class="ltr">${LETTERS[i]}</span><span>${o}</span></button>`).join('');
+  const fb = it.done ? feedback(it, sim, `<p class="fb-a">Answer: <mark>${LETTERS[it.ans]}. ${it.opts[it.ans]}</mark></p>${s.e ? `<p>${s.e}</p>` : ''}`) : '';
+  return `<p class="q-prompt">${it.cat === 'scen' ? 'Scenario: apply the term' : 'Multiple choice'}</p><p class="q-text">${s.q}</p><div class="opts">${opts}</div>${fb}`;
+}
+function bFill(it, sim) {
+  const s = it.src, many = s.b.length > 1;
+  let head;
+  if (s.recall) head = `<p class="q-prompt">Name the key term</p><blockquote class="defq">${esc(s.def)}</blockquote>`;
+  else {
+    let k = 0;
+    head = `<p class="q-prompt">Fill in the blank</p><p class="q-text">${s.q.replace(/____/g, () => `<span class="blank">${many ? ++k : '&nbsp;'}</span>`)}</p>`;
+  }
+  if (s.any && sim && !it.done) head += '<p class="fill-hint">Any order is fine.</p>';
+  let inputs = '';
+  if (sim) {
+    inputs = s.b.map((_, bi) => {
+      const cls = it.done ? ((it.over || it.res[bi]) ? 'ok' : 'no') : '';
+      return `<label class="fi"><span class="fi-n" aria-hidden="true">${many ? bi + 1 : '✎'}</span><input type="text" class="${cls}" data-b="${bi}" data-fk="b${bi}" value="${esc(it.resp[bi])}"${it.done ? ' readonly' : ''} autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="${many ? 'Blank ' + (bi + 1) : 'Your answer'}"></label>`;
+    }).join('');
+  }
+  let fb = '';
+  if (it.done) {
+    let extra = '';
+    if (sim && it.over) extra = '<p class="muted">Counted as correct.</p>';
+    else if (sim && it.pts < 1) extra = '<button class="linkbtn" data-act="override">I had it right. Count it.</button>';
+    fb = feedback(it, sim, `<p class="fb-a">Answer: <mark>${esc(s.ans)}</mark></p>${s.recall ? `<p>${esc(s.term.t)}: ${esc(s.term.d)}.</p>` : (s.e ? `<p>${s.e}</p>` : '')}${extra}`);
+  }
+  return head + inputs + fb;
+}
+function bMatch(it, sim) {
+  const used = new Set(it.resp.filter(x => x !== null));
+  const terms = it.terms.map((t, i) => `<li class="m-term${!it.done && used.has(i) ? ' used' : ''}"><span class="ltr">${LETTERS[i]}</span>${esc(t.t)}</li>`).join('');
+  const defs = it.defs.map((ti, r) => {
+    const t = it.terms[ti], picked = it.resp[r];
+    const picks = [0, 1, 2, 3].map(j => {
+      let c = '';
+      if (it.done) { if (j === ti) c = 'ok'; else if (sim && picked === j) c = 'no'; }
+      else if (picked === j) c = 'sel';
+      return `<button class="pick ${c}" data-act="mpick" data-r="${r}" data-t="${j}" data-fk="m${r}${j}" aria-pressed="${picked === j}" aria-label="Definition ${r + 1}: term ${LETTERS[j]}"${it.done ? ' aria-disabled="true"' : ''}>${LETTERS[j]}</button>`;
+    }).join('');
+    let res = '';
+    if (it.done) {
+      const ok = picked === ti;
+      res = sim ? `<p class="m-res ${ok ? 'ok' : 'no'}">${ok ? '✓' : '✗'} ${LETTERS[ti]} · ${esc(t.t)}</p>` : `<p class="m-res">${LETTERS[ti]} · ${esc(t.t)}</p>`;
+    }
+    return `<li class="m-def"><p><span class="m-num">${r + 1}.</span>${esc(t.d)}</p><div class="m-picks">${picks}</div>${res}</li>`;
+  }).join('');
+  const fb = it.done && sim ? feedback(it, sim, `<p class="fb-a">${it.pts} of 4 matched.</p>`) : '';
+  return `<p class="q-prompt">Match each definition to a term</p><ul class="m-terms">${terms}</ul><ol class="m-defs">${defs}</ol>${fb}`;
+}
+function bShort(it, sim) {
+  const s = it.src;
+  let h = `<p class="q-prompt">Short answer · 10 points</p><p class="q-text">${s.q}</p>`;
+  if (sim) h += `<label class="sr" for="sa">Your answer</label><textarea id="sa" data-sa="1" data-fk="sa" rows="7" placeholder="Write your answer here, then check it against the key points."${it.done ? ' readonly' : ''}>${esc(it.resp)}</textarea>`;
+  if (it.done) {
+    const pts = sim
+      ? `<ul class="checks">${s.pts.map((p, k) => `<li><label><input type="checkbox" data-sachk="${k}"${it.chk[k] ? ' checked' : ''}><span>${p}</span></label></li>`).join('')}</ul>
+         <p class="sa-score">Self-score: <span id="saScore">${it.pts}</span> / 10 <span class="muted" style="font-family:var(--f-body);font-weight:400;font-size:.9rem">Tick each point your answer covered.</span></p>`
+      : `<ul class="bullets">${s.pts.map(p => `<li>${p}</li>`).join('')}</ul>`;
+    h += `<div class="fb" id="fb"><p class="fb-h">Key points to include</p>${pts}<p class="fb-h sm">Model answer</p><div class="model">${s.ans.map(p => `<p>${p}</p>`).join('')}</div></div>`;
+  }
+  return h;
+}
+
+function vQuiz() {
+  const q = S.quiz, it = cur(), n = q.items.length, sim = q.mode === 'sim', last = q.i === n - 1;
+  const done = q.items.filter(x => x.done);
+  const pts = done.reduce((a, x) => a + x.pts, 0), max = done.reduce((a, x) => a + x.max, 0);
+  const body = it.kind === 'tf' ? bTF(it, sim) : it.kind === 'mc' ? bMC(it, sim) : it.kind === 'fill' ? bFill(it, sim) : it.kind === 'match' ? bMatch(it, sim) : bShort(it, sim);
+  let label;
+  if (!it.done) label = it.kind === 'fill' ? 'Check answer' : it.kind === 'match' ? 'Check matches' : it.kind === 'short' ? 'Show key points' : (last ? 'Skip and finish' : 'Skip ›');
+  else label = last ? (sim ? 'Finish and see score' : 'Finish') : 'Next ›';
+  const counter = it.kind === 'match' ? `Set ${q.i + 1} of ${n}` : `${q.i + 1} of ${n}`;
+  return `
+  <div class="quiz-top">
+    <button class="linkbtn" data-act="types">‹ Question types</button>
+    <button class="linkbtn" data-act="finish">${sim ? 'End and score' : 'End review'}</button>
+  </div>
+  <div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="${n}" aria-valuenow="${q.i + 1}" aria-label="Progress"><span style="width:${((q.i + 1) / n) * 100}%"></span></div>
+  <div class="qmeta"><span>${TYPE_NAME[q.type]}${q.retry ? ' · retry' : ''} · ${sim ? 'Simulation' : 'Answer mode'}</span><span>${counter}</span>${sim ? `<span class="sc">Score ${fmtPts(pts)} / ${max}</span>` : ''}</div>
+  <article class="card" id="qcard" tabindex="-1" aria-label="Question ${q.i + 1} of ${n}">
+    ${eyebrow(it)}
+    ${body}
+  </article>
+  <nav class="qnav" aria-label="Question navigation"><div class="qnav-in">
+    <button class="btn" data-act="prev"${q.i === 0 ? ' disabled' : ''}>‹ Back</button>
+    <button class="btn primary" data-act="primary" data-fk="primary">${label}</button>
+  </div><p class="kbd-hint">Keys: T / F, 1–4, Enter, ← →</p></nav>`;
+}
+
+function missCard(it) {
+  const s = it.src;
+  const yours = v => `<p class="row"><span class="lab">Your answer</span>${v}</p>`;
+  const answer = v => `<p class="row"><span class="lab">Answer</span><mark>${v}</mark></p>`;
+  if (it.kind === 'tf') {
+    const q = s.kt ? `<b>${esc(s.term)}</b>: “${esc(s.def)}”` : s.q;
+    return `<div class="miss"><p class="q">${q}</p>${answer(s.a ? 'True' : 'False')}${yours(it.done ? (it.resp ? 'True' : 'False') : 'Skipped')}${s.e ? `<p class="row">${s.e}</p>` : ''}</div>`;
+  }
+  if (it.kind === 'mc') return `<div class="miss"><p class="q">${s.q}</p>${answer(it.opts[it.ans])}${yours(it.done ? it.opts[it.resp] : 'Skipped')}${s.e ? `<p class="row">${s.e}</p>` : ''}</div>`;
+  if (it.kind === 'fill') {
+    const q = s.recall ? `Name the key term: “${esc(s.def)}”` : s.q;
+    const typed = it.resp.map(r => r.trim() ? esc(r) : '(blank)').join('; ');
+    return `<div class="miss"><p class="q">${q}</p>${answer(esc(s.ans))}${yours(it.done ? typed : 'Skipped')}</div>`;
+  }
+  if (it.kind === 'match') {
+    const wrong = it.defs.map((ti, r) => ({ t: it.terms[ti], ok: it.resp[r] === ti })).filter(x => !x.ok || !it.done);
+    return `<div class="miss"><p class="q">Matching set${it.done ? '' : ' (skipped)'}</p><ul>${wrong.map(x => `<li><b>${esc(x.t.t)}</b>: ${esc(x.t.d)}</li>`).join('')}</ul></div>`;
+  }
+  const missing = s.pts.filter((_, k) => !it.chk[k]);
+  return `<div class="miss"><p class="q">${s.q}</p><p class="row"><span class="lab">Self-score</span>${it.done ? it.pts + ' / 10' : 'Skipped'}</p><p class="row"><span class="lab">Points to add</span></p><ul>${missing.map(p => `<li>${p}</li>`).join('')}</ul></div>`;
+}
+
+function vResults() {
+  const q = S.quiz, sim = q.mode === 'sim', items = q.items;
+  const title = TYPE_NAME[q.type] + (q.retry ? ' · retry' : '');
+  const timerRow = timerUsed() ? `<div class="nf-row"><span>Time on the timer</span><span class="v">${fmtTime(T.mode === 'down' ? Math.max(0, T.min * 60000 - tElapsed()) : tElapsed())}${T.mode === 'down' ? ' left' : ''}</span></div>` : '';
+  const btns = (missedN) => `<div class="btn-row">
+      ${missedN ? `<button class="btn primary" data-act="retry">Retry the ${missedN} missed</button>` : ''}
+      <button class="btn${missedN ? '' : ' primary'}" data-act="again">New round</button>
+      <button class="btn" data-act="types">Question types</button></div>`;
+  if (!sim) {
+    return `<section class="nf"><h1 class="nf-title">Review Facts</h1><p class="nf-sub"><b>${esc(title)}</b> · Answer mode</p><hr class="nf-bar">
+      <div class="nf-big"><span class="k"><small>Amount reviewed</small>Items</span><span class="v">${q.i + 1}<span style="font-size:.5em"> / ${items.length}</span></span></div><hr class="nf-bar mid">
+      ${timerRow}<div class="nf-row"><span>Ready to test yourself?</span><span class="v"><button class="linkbtn" data-act="switch-mode-types">Switch to simulation</button></span></div>
+      <hr class="nf-bar">${btns(0)}</section>`;
+  }
+  const answered = items.filter(i => i.done).length;
+  const pts = items.reduce((a, i) => a + (i.done ? i.pts : 0), 0), max = items.reduce((a, i) => a + i.max, 0);
+  const pct = max ? Math.round(100 * pts / max) : 0;
+  const groups = {};
+  items.forEach(i => { const k = i.sec || TYPE_NAME[i.cat]; groups[k] = groups[k] || { p: 0, m: 0 }; groups[k].p += i.done ? i.pts : 0; groups[k].m += i.max; });
+  const gk = Object.keys(groups);
+  const groupRows = gk.length > 1 ? gk.map(k => `<div class="nf-row indent"><span>${esc(k)}</span><span class="v">${fmtPts(groups[k].p)} / ${groups[k].m}</span></div>`).join('') : '';
+  const missed = items.filter(i => !i.done || i.pts < i.max);
+  return `
+  <section class="nf">
+    <h1 class="nf-title">Score Facts</h1>
+    <p class="nf-sub"><b>${esc(title)}</b> · Simulation mode</p>
+    <hr class="nf-bar">
+    <div class="nf-big"><span class="k"><small>Amount correct</small>Score</span><span class="v">${pct}%</span></div>
+    <hr class="nf-bar mid">
+    <div class="nf-row"><span><b>Points</b></span><span class="v">${fmtPts(pts)} / ${max}</span></div>
+    ${groupRows}
+    <div class="nf-row"><span><b>Answered</b></span><span class="v">${answered} of ${items.length}</span></div>
+    ${timerRow}
+    <hr class="nf-bar">
+    ${btns(missed.length)}
+    <p class="nf-foot">${items.some(i => i.kind === 'short') ? '* Short answers are self-scored from the key-point checklist.' : '* Retry the missed ones until they stick.'}</p>
+  </section>
+  ${missed.length ? `<h2 class="h-sec">Review what you missed</h2><div class="miss-list">${missed.map(missCard).join('')}</div>` : '<h2 class="h-sec">Nothing missed. Nice work.</h2>'}`;
+}
+
+function render(toTop) {
+  const fk = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.fk : null;
+  const v = S.view;
+  app.className = 'wrap' + (v === 'home' ? ' wide' : '');
+  app.innerHTML = v === 'home' ? vHome() : v === 'types' ? vTypes() : v === 'quiz' ? vQuiz() : vResults();
+  if (toTop) {
+    window.scrollTo(0, 0);
+    const card = document.getElementById('qcard');
+    if (card) card.focus({ preventScroll: true });
+  } else if (fk) {
+    const el = app.querySelector(`[data-fk="${fk}"]`);
+    if (el) el.focus({ preventScroll: true });
+  }
+}
+
+/* ---------- events ---------- */
+const ACT = {
+  'home': () => { if (S.view === 'quiz') leaveQuiz('home'); else { S.view = 'home'; render(true); } },
+  'start-mode': b => { S.examId = b.dataset.exam; S.mode = b.dataset.mode; S.view = 'types'; render(true); },
+  'switch-mode': () => { S.mode = S.mode === 'sim' ? 'answer' : 'sim'; render(); },
+  'switch-mode-types': () => { S.mode = 'sim'; S.view = 'types'; render(true); },
+  'start': b => startQuiz(b.dataset.type),
+  'types': () => { if (S.view === 'quiz') leaveQuiz('types'); else { S.view = 'types'; render(true); } },
+  'finish': () => { S.view = 'results'; render(true); },
+  'choose': b => {
+    const it = cur();
+    choose(it.kind === 'tf' ? b.dataset.v === '1' : +b.dataset.v);
+  },
+  'mpick': b => {
+    const it = cur();
+    if (it.done) return;
+    const r = +b.dataset.r, t = +b.dataset.t;
+    if (it.resp[r] === t) it.resp[r] = null;
+    else { it.resp = it.resp.map(x => x === t ? null : x); it.resp[r] = t; }
+    render();
+  },
+  'override': () => { const it = cur(); it.over = true; it.pts = 1; render(); },
+  'prev': () => go(-1),
+  'primary': () => primary(),
+  'retry': () => {
+    const missed = S.quiz.items.filter(i => !i.done || i.pts < i.max);
+    const type = S.quiz.type;
+    launch(type, shuffle(missed.map(i => ({ cat: i.cat, src: i.src, sec: i.sec }))), true);
+  },
+  'again': () => startQuiz(S.quiz.type)
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return;
+  const fn = ACT[b.dataset.act];
+  if (fn) fn(b, e);
+});
+app.addEventListener('input', e => {
+  const el = e.target;
+  if (S.view !== 'quiz') return;
+  const it = cur();
+  if (el.dataset.b != null && it.kind === 'fill' && !it.done) it.resp[+el.dataset.b] = el.value;
+  if (el.dataset.sa && !it.done) it.resp = el.value;
+});
+app.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.filter) {
+    const k = el.dataset.filter;
+    S.filt[k] = el.type === 'checkbox' ? el.checked : el.value;
+    render();
+    return;
+  }
+  if (el.dataset.sachk != null) {
+    const it = cur();
+    it.chk[+el.dataset.sachk] = el.checked;
+    it.pts = Math.round(10 * it.chk.filter(Boolean).length / it.chk.length);
+    const sc = document.getElementById('saScore');
+    if (sc) sc.textContent = it.pts;
+    const meta = app.querySelector('.qmeta .sc');
+    if (meta) {
+      const done = S.quiz.items.filter(x => x.done);
+      meta.textContent = `Score ${fmtPts(done.reduce((a, x) => a + x.pts, 0))} / ${done.reduce((a, x) => a + x.max, 0)}`;
+    }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !tPanel.hidden) { closePanel(); tFace.focus(); return; }
+  if (S.view !== 'quiz' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = e.target, tag = el.tagName;
+  if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (tag === 'INPUT' && el.type !== 'checkbox') {
+    if (e.key === 'Enter' && el.dataset.b != null) { e.preventDefault(); primary(); }
+    return;
+  }
+  if (el.closest && el.closest('.t-panel')) return;
+  const it = cur();
+  const k = e.key.toLowerCase();
+  if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  else if (e.key === 'Enter' && (tag === 'BODY' || el.id === 'qcard')) { e.preventDefault(); primary(); }
+  else if (it.kind === 'tf' && (k === 't' || k === 'f')) choose(k === 't');
+  else if (it.kind === 'mc') {
+    let n = '1234'.indexOf(e.key);
+    if (n < 0) n = 'abcd'.indexOf(k);
+    if (n >= 0 && n < it.opts.length) choose(n);
+  }
+});
+
+/* ---------- timer ---------- */
+const T = { mode: 'up', min: 50, acc: 0, t0: 0, run: false, fired: false };
+const tFace = document.getElementById('tFace'), tPlay = document.getElementById('tPlay'), tTime = document.getElementById('tTime');
+const tPanel = document.getElementById('tPanel'), tBig = document.getElementById('tBig'), tStart = document.getElementById('tStart');
+const tMin = document.getElementById('tMin'), tMinRow = document.getElementById('tMinRow'), timerEl = document.getElementById('timer');
+const ICON_PLAY = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="6" y="4.5" width="4.2" height="15" rx="1" fill="currentColor"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1" fill="currentColor"/></svg>';
+const tElapsed = () => T.acc + (T.run ? Date.now() - T.t0 : 0);
+const timerUsed = () => T.run || T.acc > 0;
+function fmtTime(ms) {
+  const s = T.mode === 'down' ? Math.ceil(ms / 1000) : Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const p = n => String(n).padStart(2, '0');
+  return h ? `${h}:${p(m)}:${p(sec)}` : `${p(m)}:${p(sec)}`;
+}
+function tToggle() {
+  if (T.run) { T.acc = tElapsed(); T.run = false; }
+  else {
+    if (T.mode === 'down' && tElapsed() >= T.min * 60000) { T.acc = 0; T.fired = false; }
+    T.t0 = Date.now(); T.run = true;
+  }
+  tPaint();
+}
+function tReset() { T.acc = 0; T.run = false; T.fired = false; tPaint(); }
+function tPaint() {
+  const el = tElapsed();
+  let shown = el, expired = false;
+  if (T.mode === 'down') {
+    const left = T.min * 60000 - el;
+    shown = Math.max(0, left);
+    if (left <= 0 && timerUsed()) {
+      expired = true;
+      if (T.run) { T.acc = T.min * 60000; T.run = false; }
+      if (!T.fired) { T.fired = true; toast('Time is up. The countdown has finished.'); }
+    }
+  }
+  const idle = !timerUsed();
+  tTime.textContent = idle ? (T.mode === 'down' ? fmtTime(T.min * 60000) : 'Timer') : fmtTime(shown);
+  tBig.textContent = fmtTime(idle && T.mode === 'down' ? T.min * 60000 : shown);
+  timerEl.classList.toggle('running', T.run);
+  timerEl.classList.toggle('expired', expired);
+  if (tPlay.dataset.state !== String(T.run)) { tPlay.innerHTML = T.run ? ICON_PAUSE : ICON_PLAY; tPlay.dataset.state = String(T.run); }
+  tPlay.setAttribute('aria-label', T.run ? 'Pause timer' : (idle ? 'Start timer' : 'Resume timer'));
+  tStart.textContent = T.run ? 'Pause' : (idle ? 'Start' : 'Resume');
+}
+function closePanel() { tPanel.hidden = true; tFace.setAttribute('aria-expanded', 'false'); }
+tFace.addEventListener('click', () => { tPanel.hidden = !tPanel.hidden; tFace.setAttribute('aria-expanded', String(!tPanel.hidden)); });
+tPlay.addEventListener('click', tToggle);
+tStart.addEventListener('click', tToggle);
+document.getElementById('tReset').addEventListener('click', tReset);
+tPanel.querySelectorAll('[data-tm]').forEach(b => b.addEventListener('click', () => {
+  T.mode = b.dataset.tm;
+  tPanel.querySelectorAll('[data-tm]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  tMinRow.hidden = T.mode !== 'down';
+  tReset();
+}));
+tMin.addEventListener('change', () => {
+  const v = Math.min(300, Math.max(1, parseInt(tMin.value, 10) || 50));
+  tMin.value = v; T.min = v;
+  if (!T.run) tReset(); else tPaint();
+});
+document.addEventListener('click', e => {
+  if (!tPanel.hidden && !tPanel.contains(e.target) && !timerEl.contains(e.target)) closePanel();
+});
+setInterval(tPaint, 250);
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 5000);
+}
+
+/* ---------- theme ---------- */
+const themeBtn = document.getElementById('themeBtn');
+const ICON_MOON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
+const ICON_SUN = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>';
+const isDark = () => {
+  const t = document.documentElement.getAttribute('data-theme');
+  return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+function paintTheme() {
+  const d = isDark();
+  themeBtn.innerHTML = d ? ICON_SUN : ICON_MOON;
+  themeBtn.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme');
+}
+themeBtn.addEventListener('click', () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('fses-theme', next); } catch (err) { /* storage unavailable */ }
+  paintTheme();
+});
+paintTheme();
+tPaint();
+render();
+</script>
+</body>
+</html>
